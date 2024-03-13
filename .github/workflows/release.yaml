@@ -1,0 +1,45 @@
+---
+name: release
+on:
+  release:
+    types:
+      - created
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Establish git credentials.
+        run: |
+          git config --global credential.helper store
+          echo "https://${{ secrets.CLOUDSMITH_USERNAME }}:${{ secrets.CLOUDSMITH_TOKEN }}@dl.cloudsmith.io" > ~/.git-credentials
+      - name: Publish the `date-rs` crate.
+        run: cargo publish --registry ss151w
+        env:
+          CARGO_NET_GIT_FETCH_WITH_CLI: true
+          CARGO_REGISTRIES_SS151_INDEX: ${{ secrets.CLOUDSMITH_CARGO_REPO }}
+          CARGO_REGISTRIES_SS151W_INDEX: https://dl.cloudsmith.io/basic/ss151/rust/cargo/index.git
+          CARGO_REGISTRIES_SS151W_TOKEN: ${{ secrets.CLOUDSMITH_TOKEN }}
+  docs:
+    runs-on:
+      - self-hosted
+      - docs
+    steps:
+      - name: Install doc-merge.
+        run: cargo install doc-merge
+      - uses: actions/checkout@v4
+      - name: Build the documentation.
+        run: cargo doc --no-deps --lib --all-features
+        env:
+          CARGO_NET_GIT_FETCH_WITH_CLI: true
+          CARGO_REGISTRIES_SS151_INDEX: ${{ secrets.CLOUDSMITH_CARGO_REPO }}
+      - name: Move the documentation to the website.
+        run: doc-merge --dest /var/www/html/rustdoc/
+      - name: Clean up.
+        if: always()
+        run: |
+          rm -rf .git && \
+          rm -rf .github && \
+          rm -rf .gitignore && \
+          rm .prettierrc.yaml && \
+          rm -rf *
