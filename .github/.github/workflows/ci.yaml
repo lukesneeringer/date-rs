@@ -1,0 +1,33 @@
+---
+name: ci
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo test --all-features --workspace
+        env:
+          CARGO_NET_GIT_FETCH_WITH_CLI: true
+          CARGO_REGISTRIES_SS151_INDEX: ${{ secrets.CLOUDSMITH_CARGO_REPO }}
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup toolchain install nightly
+      - run: rustup component add rustfmt --toolchain nightly
+      - run: cargo +nightly fmt -- --check
+        env:
+          CARGO_NET_GIT_FETCH_WITH_CLI: true
+          CARGO_REGISTRIES_SS151_INDEX: ${{ secrets.CLOUDSMITH_CARGO_REPO }}
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo doc --no-deps --bins
+        env:
+          CARGO_NET_GIT_FETCH_WITH_CLI: true
+          CARGO_REGISTRIES_SS151_INDEX: ${{ secrets.CLOUDSMITH_CARGO_REPO }}
