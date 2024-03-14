@@ -1,4 +1,8 @@
+use std::fmt::Debug;
 use std::fmt::Display;
+use std::fmt::Error;
+use std::fmt::Formatter;
+use std::fmt::Result;
 use std::fmt::Write;
 
 use crate::Date;
@@ -11,14 +15,19 @@ impl Date {
 }
 
 /// A date with a requested format.
-#[derive(Debug)]
 pub struct FormattedDate<'a> {
   date: &'a Date,
   format: &'a str,
 }
 
+impl<'a> Debug for FormattedDate<'a> {
+  fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+    Display::fmt(self, f)
+  }
+}
+
 impl<'a> Display for FormattedDate<'a> {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> Result {
     // Iterate over the format string and consume it.
     let d = self.date;
     let mut flag = false;
@@ -49,7 +58,7 @@ impl<'a> Display for FormattedDate<'a> {
           't' => f.write_char('\t')?,
           'n' => f.write_char('\n')?,
           '%' => f.write_char('%')?,
-          _ => Err(std::fmt::Error)?,
+          _ => Err(Error)?,
         }
       }
       else if c == '%' {
@@ -76,6 +85,7 @@ macro_rules! month_str {
       const fn month_name(&self) -> &'static str {
         match self.month() {
           $($num => stringify!($long),)*
+          #[cfg(not(tarpaulin_include))]
           _ => panic!("Fictitious month"),
         }
       }
@@ -84,6 +94,7 @@ macro_rules! month_str {
       const fn month_abbv(&self) -> &'static str {
         match self.month() {
           $($num => stringify!($short),)*
+          #[cfg(not(tarpaulin_include))]
           _ => panic!("Fictitious month"),
         }
       }
@@ -114,13 +125,22 @@ mod tests {
     let date = date! { 2012-04-21 };
     for (fmt_string, date_str) in [
       ("%Y-%m-%d", "2012-04-21"),
+      ("%F", "2012-04-21"),
+      ("%v", "21-Apr-2012"),
       ("%B %e, %Y", "April 21, 2012"),
+      ("%B %e, %C%y", "April 21, 2012"),
       ("%A, %B %e, %Y", "Saturday, April 21, 2012"),
       ("%e %h %Y", "21 Apr 2012"),
       ("%a %e %b %Y", "Sat 21 Apr 2012"),
       ("%m/%d/%y", "04/21/12"),
+      ("year: %Y / day: %j", "year: 2012 / day: 112"),
+      ("%%", "%"),
+      ("%w %u", "6 6"),
+      ("%t %n", "\t \n"),
     ] {
       check!(date.format(fmt_string).to_string() == date_str);
+      check!(date.format(fmt_string) == date_str);
+      check!(format!("{:?}", date.format(fmt_string)) == date_str);
     }
   }
 }

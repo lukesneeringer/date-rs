@@ -62,6 +62,7 @@ mod tests {
     check!("2012-4-21".parse::<Date>().is_err());
     check!("04/21/2012".parse::<Date>().is_err());
     check!("12-04-21".parse::<Date>().is_err());
+    check!("foo".parse::<Date>().map_err(|e| e.to_string()).unwrap_err().contains("foo"));
     Ok(())
   }
 }

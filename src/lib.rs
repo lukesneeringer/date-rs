@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::fmt;
 
 /// Construct a date from a `YYYY-MM-DD` literal.
 ///
@@ -35,7 +35,7 @@ pub use duration::Duration;
 pub use weekday::Weekday;
 
 /// A representation of a single date.
-#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Eq, PartialEq, PartialOrd, Ord)]
 pub struct Date {
   pub(crate) year: i16,
   pub(crate) day_of_year_0: u16,
@@ -130,8 +130,14 @@ impl Date {
   }
 }
 
-impl Display for Date {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Debug for Date {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "{}", self.format("%Y-%m-%d"))
+  }
+}
+
+impl fmt::Display for Date {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     write!(f, "{}", self.format("%Y-%m-%d"))
   }
 }
@@ -211,5 +217,6 @@ mod tests {
   #[test]
   fn test_display() {
     check!(date! { 2012-04-21 }.to_string() == "2012-04-21");
+    check!(format!("{:?}", date! { 2012-04-21 }) == "2012-04-21");
   }
 }
