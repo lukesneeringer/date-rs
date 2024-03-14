@@ -19,6 +19,7 @@ struct DateVisitor;
 impl<'de> Visitor<'de> for DateVisitor {
   type Value = Date;
 
+  #[cfg(not(tarpaulin_include))]
   fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
     formatter.write_str("a YYYY-MM-DD date string")
   }
