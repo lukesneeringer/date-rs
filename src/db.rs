@@ -3,10 +3,12 @@ use diesel::deserialize::Result as DeserializeResult;
 use diesel::pg::data_types::PgDate;
 use diesel::pg::Pg;
 use diesel::pg::PgValue;
+use diesel::query_builder::QueryFragment;
 use diesel::serialize::Output;
 use diesel::serialize::Result as SerializeResult;
 use diesel::serialize::ToSql;
 use diesel::sql_types;
+use diesel::Expression;
 
 use crate::Date;
 use crate::Duration;
@@ -19,7 +21,7 @@ impl ToSql<sql_types::Date, Pg> for Date {
 }
 
 impl FromSql<sql_types::Date, Pg> for Date {
-  fn from_sql(bytes: PgValue) -> DeserializeResult<Self> {
+  fn from_sql(bytes: PgValue<'_>) -> DeserializeResult<Self> {
     let PgDate(offset) = FromSql::<diesel::sql_types::Date, Pg>::from_sql(bytes)?;
     let duration = Duration::days(offset);
     Ok(PG_EPOCH + duration)
