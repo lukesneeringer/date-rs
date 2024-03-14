@@ -18,7 +18,7 @@ jobs:
         run: cargo install cargo-tarpaulin
       - name: Generate code coverage
         run: |
-          cargo tarpaulin --verbose --out xml --engine llvm
+          cargo tarpaulin --verbose --out xml --engine llvm --features serde
         env:
           CARGO_NET_GIT_FETCH_WITH_CLI: true
           CARGO_REGISTRIES_SS151_INDEX: ${{ secrets.CLOUDSMITH_CARGO_REPO }}
@@ -26,5 +26,5 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          slug: ss151/share-count
+          slug: ss151/date-rs
           fail_ci_if_error: true
