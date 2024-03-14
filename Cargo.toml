@@ -19,5 +19,5 @@ serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1" }
 
 [features]
-default = ["diesel-pg"]
+default = []
 diesel-pg = ["dep:diesel", "diesel/postgres"]
