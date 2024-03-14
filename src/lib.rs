@@ -25,6 +25,9 @@ macro_rules! date {
 mod diesel;
 mod duration;
 mod format;
+mod parse;
+#[cfg(feature = "serde")]
+mod serde;
 mod utils;
 mod weekday;
 
