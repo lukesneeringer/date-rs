@@ -42,3 +42,4 @@ This behavior may become opt-in (e.g. with a `new_overflow` method) in the futur
 `date-rs` ships with the following features:
 
 - `diesel-pg`: Enables interop with PostgreSQL `DATE` columns using Diesel
+- `serde`: Enables serialization and desearialization with `serde`
