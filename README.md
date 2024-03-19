@@ -16,7 +16,7 @@ may change in the future if its internal representation changes.
 Making a date:
 
 ```rs
-use date_rs::Date;
+use date::Date;
 
 let date = Date::new(2012, 4, 21);
 ```
@@ -24,7 +24,7 @@ let date = Date::new(2012, 4, 21);
 You can also use the `date!` macro to get a syntax resembling a date literal:
 
 ```rs
-use date_rs::date;
+use date::date;
 
 let date = date! { 2012-04-21 };
 ```
