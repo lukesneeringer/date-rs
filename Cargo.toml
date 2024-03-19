@@ -1,13 +1,13 @@
 [package]
-name = "date-rs"
-version = "0.2.0"
+name = "date"
+version = "0.3.0"
 edition = "2021"
 authors = ["Luke Sneeringer <luke@sneeringer.com>"]
 rust-version = "1.70"
 license = "Proprietary"
 publish = ["ss151w"]
 repository = "https://github.com/ss151/date-rs"
-documentation = "https://rustdoc.highsignal.tech/date-rs"
+documentation = "https://rustdoc.highsignal.tech/date"
 
 [dependencies]
 diesel = { version = "2", optional = true }

@@ -9,7 +9,7 @@
 //! Making a date:
 //!
 //! ```rs
-//! use date_rs::Date;
+//! use date::Date;
 //!
 //! let date = Date::new(2012, 4, 21);
 //! ```
@@ -17,7 +17,7 @@
 //! You can also use the `date!` macro to get a syntax resembling a date literal:
 //!
 //! ```rs
-//! use date_rs::date;
+//! use date::date;
 //!
 //! let date = date! { 2012-04-21 };
 //! ```
@@ -29,7 +29,7 @@ use std::fmt;
 /// ## Examples
 ///
 /// ```
-/// # use date_rs::date;
+/// # use date::date;
 /// let d = date! { 2024-01-01 };
 /// assert_eq!(d.year(), 2024);
 /// assert_eq!(d.month(), 1);
@@ -73,7 +73,7 @@ impl Date {
   /// ## Examples
   ///
   /// ```
-  /// use date_rs::Date;
+  /// use date::Date;
   /// let date = Date::new(2012, 4, 21);
   /// ```
   ///
