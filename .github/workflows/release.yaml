@@ -29,7 +29,7 @@ jobs:
         run: cargo install doc-merge
       - uses: actions/checkout@v4
       - name: Build the documentation.
-        run: cargo doc --no-deps --lib --all-features
+        run: cargo doc --no-deps --lib --features serde
         env:
           CARGO_NET_GIT_FETCH_WITH_CLI: true
           CARGO_REGISTRIES_SS151_INDEX: ${{ secrets.CLOUDSMITH_CARGO_REPO }}
