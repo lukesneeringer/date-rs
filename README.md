@@ -31,11 +31,9 @@ let date = date! { 2012-04-21 };
 
 ## Overflow
 
-`Date` currently allows for overflow values (for example, February 30 or December 32), and maps
-them accordingly. This allows users to perform certain mathematical computations without having to
-do their own overflow checking.
-
-This behavior may become opt-in (e.g. with a `new_overflow` method) in the future.
+`Date` provides an `overflowing_new` function that allows for overflow values (for example,
+February 30 or December 32), and maps them accordingly. This allows users to perform certain
+mathematical computations without having to do their own overflow checking.
 
 ## Features
 
