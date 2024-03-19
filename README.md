@@ -5,7 +5,7 @@
 [![release](https://api-prd.cloudsmith.io/v1/badges/version/ss151/rust/cargo/date-rs/latest/x/?render=true&show_latest=false&badge_token=gAAAAABle61i4iPL0V1PXCIb3pbBNDLF1sO2N2w4Z68H3otd3wBLKVk-Hk4g1M6ywVqVsKmMMrnWOmFZpdGMkTZ90YKjXMw7yB_hC8vEEHJQUMkQAjDE87M%3D)](https://cloudsmith.io/~ss151/repos/rust/packages/detail/cargo/date-rs/latest/)
 [![docs](https://img.shields.io/badge/docs-release-blue)](https://rustdoc.highsignal.tech/date-rs/)
 
-The `date-rs` crate provides a simple, easy-to-use `Date` struct (and corresponding macro). Date
+The `date` crate provides a simple, easy-to-use `Date` struct (and corresponding macro). Date
 provides storage for a single Gregorian calendar date.
 
 `Date` can currently store any valid calendar date between years -65,536 and -65,535, although this
