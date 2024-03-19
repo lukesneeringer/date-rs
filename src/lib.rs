@@ -1,3 +1,27 @@
+//! The `date-rs` crate provides a simple, easy-to-use `Date` struct (and corresponding macro).
+//! Date provides storage for a single Gregorian calendar date.
+//!
+//! `Date` can currently store any valid calendar date between years -65,536 and -65,535, although
+//! this may change in the future if its internal representation changes.
+//!
+//! ## Examples
+//!
+//! Making a date:
+//!
+//! ```rs
+//! use date_rs::Date;
+//!
+//! let date = Date::new(2012, 4, 21);
+//! ```
+//!
+//! You can also use the `date!` macro to get a syntax resembling a date literal:
+//!
+//! ```rs
+//! use date_rs::date;
+//!
+//! let date = date! { 2012-04-21 };
+//! ```
+
 use std::fmt;
 
 /// Construct a date from a `YYYY-MM-DD` literal.
@@ -46,6 +70,33 @@ pub struct Date {
 impl Date {
   /// Construct a new `Date` from the provided year, month, and day.
   ///
+  /// ## Examples
+  ///
+  /// ```
+  /// use date_rs::Date;
+  /// let date = Date::new(2012, 4, 21);
+  /// ```
+  ///
+  /// ## Panic
+  ///
+  /// This function panics if it receives "out-of-bounds" values (e.g. "March 32" or "February
+  /// 30"). However, it can be convenient to be able to send such values to avoid having to handle
+  /// overflow yourself; use [`overflowing_new`] for this purpose.
+  pub const fn new(year: i16, month: u8, day: u8) -> Self {
+    const MONTH_DAYS: [u8; 12] = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    assert!(month >= 1 && month <= 12, "Month out-of-bounds");
+    assert!(day >= 1 && day <= MONTH_DAYS[month as usize - 1], "Day out-of-bounds");
+    if month == 2 && day == 29 {
+      assert!(utils::is_leap_year(year), "February 29 only occurs on leap years")
+    }
+
+    // Get the proper day of the year.
+    let day_of_year_0 = utils::bounds(year)[(month - 1) as usize] + day as u16 - 1;
+    Self { year, day_of_year_0 }
+  }
+
+  /// Construct a new `Date` from the provided year, month, and day.
+  ///
   /// This function accepts "overflow" values that would lead to invalid dates, and canonicalizes
   /// them to correct dates, allowing for some math to be done on the inputs without needing to
   /// perform overflow checks yourself.
@@ -53,7 +104,7 @@ impl Date {
   /// For example, it's legal to send "March 32" to this function, and it will yield April 1 of the
   /// same year. It's also legal to send a `month` or `day` value of zero, and it will conform to
   /// the month or day (respectively) prior to the first.
-  pub const fn new(year: i16, month: u8, day: u8) -> Self {
+  pub const fn overflowing_new(year: i16, month: u8, day: u8) -> Self {
     let mut year = year;
     let mut month = month;
     let mut day = day;
@@ -175,12 +226,30 @@ mod tests {
   }
 
   #[test]
+  #[should_panic]
+  fn test_overflow_panic_day() {
+    Date::new(2012, 4, 31);
+  }
+
+  #[test]
+  #[should_panic]
+  fn test_overflow_panic_month() {
+    Date::new(2012, 13, 1);
+  }
+
+  #[test]
+  #[should_panic]
+  fn test_overflow_panic_ly() {
+    Date::new(2100, 2, 29);
+  }
+
+  #[test]
   #[allow(clippy::zero_prefixed_literal)]
   fn test_ymd_overflow() {
     macro_rules! overflows_to {
       ($y1:literal-$m1:literal-$d1:literal
           == $y2:literal-$m2:literal-$d2:literal) => {
-        let date1 = Date::new($y1, $m1, $d1);
+        let date1 = Date::overflowing_new($y1, $m1, $d1);
         let date2 = Date::new($y2, $m2, $d2);
         check!(date1 == date2);
       };
