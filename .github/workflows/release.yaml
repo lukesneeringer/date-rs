@@ -13,4 +13,4 @@ jobs:
         run: cargo publish
         env:
           CARGO_NET_GIT_FETCH_WITH_CLI: true
-          CARGO_REGISTRY_INDEX: ${{ secrets.CARGO_REGISTRY_INDEX }}
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
