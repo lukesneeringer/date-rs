@@ -13,7 +13,7 @@ use diesel::sql_types;
 use diesel::Expression;
 
 use crate::Date;
-use crate::Duration;
+use crate::DateInterval;
 
 impl ToSql<sql_types::Date, Pg> for Date {
   fn to_sql<'se>(&'se self, out: &mut Output<'se, '_, Pg>) -> SerializeResult {
@@ -25,7 +25,7 @@ impl ToSql<sql_types::Date, Pg> for Date {
 impl FromSql<sql_types::Date, Pg> for Date {
   fn from_sql(bytes: PgValue<'_>) -> DeserializeResult<Self> {
     let PgDate(offset) = FromSql::<diesel::sql_types::Date, Pg>::from_sql(bytes)?;
-    let duration = Duration::days(offset);
+    let duration = DateInterval::days(offset);
     Ok(PG_EPOCH + duration)
   }
 }
