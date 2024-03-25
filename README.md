@@ -39,5 +39,5 @@ mathematical computations without having to do their own overflow checking.
 
 `date-rs` ships with the following features:
 
-- `diesel-pg`: Enables interop with PostgreSQL `DATE` columns using Diesel
-- `serde`: Enables serialization and desearialization with `serde`
+- **`diesel-pg`**: Enables interop with PostgreSQL `DATE` columns using Diesel.
+- **`serde`**: Enables serialization and desearialization with `serde`. _(Enabled by default.)_

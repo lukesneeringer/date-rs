@@ -21,6 +21,13 @@
 //!
 //! let date = date! { 2012-04-21 };
 //! ```
+//!
+//! ## Features
+//!
+//! `date-rs` ships with the following features:
+//!
+//! - **`diesel-pg`**: Enables interop with PostgreSQL `DATE` columns using Diesel.
+//! - **`serde`**: Enables serialization and desearialization with `serde`. _(Enabled by default.)_
 
 use std::fmt;
 
@@ -47,21 +54,21 @@ macro_rules! date {
 
 #[cfg(feature = "diesel-pg")]
 mod db;
-mod duration;
 mod format;
+mod interval;
 mod parse;
 #[cfg(feature = "serde")]
 mod serde;
 mod utils;
 mod weekday;
 
-pub use duration::Duration;
+pub use interval::DateInterval;
 pub use weekday::Weekday;
 
 /// A representation of a single date.
 #[derive(Copy, Clone, Eq, PartialEq, PartialOrd, Ord)]
 #[cfg_attr(feature = "diesel-pg", derive(diesel::AsExpression, diesel::FromSqlRow))]
-#[cfg_attr(feature = "diesel-pg", sql_type = "::diesel::sql_types::Date")]
+#[cfg_attr(feature = "diesel-pg", diesel(sql_type = ::diesel::sql_types::Date))]
 pub struct Date {
   pub(crate) year: i16,
   pub(crate) day_of_year_0: u16,
@@ -81,7 +88,7 @@ impl Date {
   ///
   /// This function panics if it receives "out-of-bounds" values (e.g. "March 32" or "February
   /// 30"). However, it can be convenient to be able to send such values to avoid having to handle
-  /// overflow yourself; use [`overflowing_new`] for this purpose.
+  /// overflow yourself; use [`Date::overflowing_new`] for this purpose.
   pub const fn new(year: i16, month: u8, day: u8) -> Self {
     const MONTH_DAYS: [u8; 12] = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
     assert!(month >= 1 && month <= 12, "Month out-of-bounds");
@@ -141,22 +148,13 @@ impl Date {
   pub(crate) const fn is_leap_year(&self) -> bool {
     utils::is_leap_year(self.year())
   }
+}
 
-  /// Returns the day of the month, starting from 1.
-  ///
-  /// The return value ranges from 1 to 31. (The last day of the month differs by months.)
+impl Date {
+  /// Returns the year number in the calendar date.
   #[inline]
-  pub const fn day(&self) -> u8 {
-    macro_rules! day {
-      ($($m:literal),*) => {{
-        let bounds = utils::bounds(self.year);
-        ($(if bounds[$m] <= self.day_of_year_0 {
-          self.day_of_year_0 - bounds[$m] + 1
-        })else*
-        else { self.day_of_year_0 + 1 }) as u8
-      }}
-    }
-    day!(11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)
+  pub const fn year(&self) -> i16 {
+    self.year
   }
 
   /// Returns the month number, starting from 1.
@@ -176,10 +174,73 @@ impl Date {
     month!(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
   }
 
-  /// Returns the year number in the calendar date.
+  /// Returns the day of the month, starting from 1.
+  ///
+  /// The return value ranges from 1 to 31. (The last day of the month differs by months.)
   #[inline]
-  pub const fn year(&self) -> i16 {
-    self.year
+  pub const fn day(&self) -> u8 {
+    macro_rules! day {
+      ($($m:literal),*) => {{
+        let bounds = utils::bounds(self.year);
+        ($(if bounds[$m] <= self.day_of_year_0 {
+          self.day_of_year_0 - bounds[$m] + 1
+        })else*
+        else { self.day_of_year_0 + 1 }) as u8
+      }}
+    }
+    day!(11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)
+  }
+
+  /// Return the weekday corresponding to the given date.
+  #[inline]
+  pub const fn weekday(&self) -> Weekday {
+    // Implementation for this explained at [Art of Memory][aom].
+    //
+    // [aom]: https://artofmemory.com/blog/how-to-calculate-the-day-of-the-week/
+    let year_abs = self.year().unsigned_abs();
+    let year_code = (year_abs % 100 + (year_abs % 100 / 4)) % 7;
+
+    // Note: These values are offset by one from the referenced website because
+    // we are using 0-offset days of the year, rather than 1-offset days of the
+    // month plus month codes (as the website recommends).
+    //
+    // We follow this instead of the website's approach because (1) it better
+    // fits our data model and (2) it removes the need for month codes at all.
+    let century_code = match self.year() / 100 % 4 {
+      0 => 7,
+      1 => 5,
+      2 => 3,
+      3 => 1,
+      #[cfg(not(tarpaulin_include))]
+      _ => panic!("Unreachable: n % 4 is always within `0..=4`."),
+    };
+    let leap_year = match self.is_leap_year() {
+      true => 1,
+      false => 0,
+    };
+    match (year_code + century_code + self.day_of_year_0 - leap_year) % 7 {
+      0 => Weekday::Sunday,
+      1 => Weekday::Monday,
+      2 => Weekday::Tuesday,
+      3 => Weekday::Wednesday,
+      4 => Weekday::Thursday,
+      5 => Weekday::Friday,
+      6 => Weekday::Saturday,
+      #[cfg(not(tarpaulin_include))]
+      _ => panic!("Unreachable: Fake weekday"),
+    }
+  }
+}
+
+impl Date {
+  /// Format the date according to the provided `strftime` specifier.
+  #[doc = include_str!("../support/date-format.md")]
+  ///
+  #[doc = include_str!("../support/padding.md")]
+  ///
+  #[doc = include_str!("../support/plain-characters.md")]
+  pub fn format<'a>(&'a self, format_str: &'a str) -> format::FormattedDate {
+    format::FormattedDate { date: self, format: format_str }
   }
 }
 

@@ -7,17 +7,10 @@ use std::fmt::Write;
 
 use crate::Date;
 
-impl Date {
-  /// Format the date according to the provided `strftime` specifier.
-  pub fn format<'a>(&'a self, format_str: &'a str) -> FormattedDate {
-    FormattedDate { date: self, format: format_str }
-  }
-}
-
 /// A date with a requested format.
 pub struct FormattedDate<'a> {
-  date: &'a Date,
-  format: &'a str,
+  pub(crate) date: &'a Date,
+  pub(crate) format: &'a str,
 }
 
 impl<'a> Debug for FormattedDate<'a> {
@@ -31,18 +24,39 @@ impl<'a> Display for FormattedDate<'a> {
     // Iterate over the format string and consume it.
     let d = self.date;
     let mut flag = false;
+    let mut padding = Padding::Default;
     for c in self.format.chars() {
       if flag {
+        // Apply padding if this is a padding change.
+        #[rustfmt::skip]
+        match c {
+          '0' => { padding = Padding::Zero; continue; },
+          '-' => { padding = Padding::Suppress; continue; },
+          '_' => { padding = Padding::Space; continue; },
+          _ => {},
+        };
+
+        // Set up a macro to process padding.
+        macro_rules! write_padded {
+          ($f:ident, $pad:ident, $level:literal, $e:expr) => {
+            match $pad {
+              Padding::Default | Padding::Zero => write!($f, concat!("{:0", $level, "}"), $e),
+              Padding::Space => write!($f, concat!("{:", $level, "}"), $e),
+              Padding::Suppress => write!($f, "{}", $e),
+            }
+          };
+        }
+
+        // Write out the formatted component.
         flag = false;
         match c {
-          'Y' => write!(f, "{}", d.year)?,
-          'C' => write!(f, "{:02}", d.year / 100)?,
-          'y' => write!(f, "{:02}", d.year % 100)?,
-          'm' => write!(f, "{:02}", d.month())?,
+          'Y' => write_padded!(f, padding, 4, d.year)?,
+          'C' => write_padded!(f, padding, 2, d.year / 100)?,
+          'y' => write_padded!(f, padding, 2, d.year % 100)?,
+          'm' => write_padded!(f, padding, 2, d.month())?,
           'b' | 'h' => write!(f, "{}", d.month_abbv())?,
           'B' => write!(f, "{}", d.month_name())?,
-          'd' => write!(f, "{:02}", d.day())?,
-          'e' => write!(f, "{:2}", d.day())?,
+          'd' => write_padded!(f, padding, 2, d.day())?,
           'a' => write!(f, "{}", d.weekday().abbv())?,
           'A' => write!(f, "{}", d.weekday())?,
           'w' => write!(f, "{}", d.weekday() as u8)?,
@@ -51,7 +65,7 @@ impl<'a> Display for FormattedDate<'a> {
             _ => self.date.weekday() as u8,
           })?,
           // U, W
-          'j' => write!(f, "{:03}", d.day_of_year_0 + 1)?,
+          'j' => write_padded!(f, padding, 3, d.day_of_year_0 + 1)?,
           'D' => write!(f, "{:02}/{:02}/{:02}", d.month(), d.day(), d.year)?,
           'F' => write!(f, "{:04}-{:02}-{:02}", d.year, d.month(), d.day())?,
           'v' => write!(f, "{:2}-{}-{:04}", d.day(), d.month_abbv(), d.year())?,
@@ -63,6 +77,7 @@ impl<'a> Display for FormattedDate<'a> {
       }
       else if c == '%' {
         flag = true;
+        padding = Padding::Default;
       }
       else {
         f.write_char(c)?;
@@ -116,6 +131,18 @@ month_str! {
   12 => Dec ~ December
 }
 
+/// A padding modifier
+enum Padding {
+  /// Use the default padding (usually either `0` or nothing).
+  Default,
+  /// Explicitly pad with `0`
+  Zero,
+  /// Explicitly pad with ` `.
+  Space,
+  /// Explicitly prevent padding, even if the token has default padding.
+  Suppress,
+}
+
 #[cfg(test)]
 mod tests {
   use assert2::check;
@@ -127,11 +154,11 @@ mod tests {
       ("%Y-%m-%d", "2012-04-21"),
       ("%F", "2012-04-21"),
       ("%v", "21-Apr-2012"),
-      ("%B %e, %Y", "April 21, 2012"),
-      ("%B %e, %C%y", "April 21, 2012"),
-      ("%A, %B %e, %Y", "Saturday, April 21, 2012"),
-      ("%e %h %Y", "21 Apr 2012"),
-      ("%a %e %b %Y", "Sat 21 Apr 2012"),
+      ("%B %-d, %Y", "April 21, 2012"),
+      ("%B %-d, %C%y", "April 21, 2012"),
+      ("%A, %B %-d, %Y", "Saturday, April 21, 2012"),
+      ("%d %h %Y", "21 Apr 2012"),
+      ("%a %d %b %Y", "Sat 21 Apr 2012"),
       ("%m/%d/%y", "04/21/12"),
       ("year: %Y / day: %j", "year: 2012 / day: 112"),
       ("%%", "%"),
@@ -141,6 +168,17 @@ mod tests {
       check!(date.format(fmt_string).to_string() == date_str);
       check!(date.format(fmt_string) == date_str);
       check!(format!("{:?}", date.format(fmt_string)) == date_str);
+    }
+  }
+
+  #[test]
+  fn test_padding() {
+    let date = date! { 2024-07-04 };
+    for (fmt_string, date_str) in
+      [("%Y-%m-%d", "2024-07-04"), ("%B %-d, %Y", "July 4, 2024"), ("%-d-%h-%Y", "4-Jul-2024")]
+    {
+      check!(date.format(fmt_string).to_string() == date_str);
+      check!(date.format(fmt_string) == date_str);
     }
   }
 }

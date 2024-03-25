@@ -7,27 +7,32 @@ use std::ops::SubAssign;
 use crate::utils;
 use crate::Date;
 
-/// Duration with day-level precision only.
+/// DateInterval with day-level precision only.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(transparent)]
-pub struct Duration {
+pub struct DateInterval {
   pub days: i32,
 }
 
-impl Duration {
+impl DateInterval {
   /// A reprensentation of a given number of days.
   #[inline]
-  pub const fn days(days: i32) -> Self {
+  pub const fn new(days: i32) -> Self {
     Self { days }
   }
 
-  /// The absolute value of this duration.
+  /// The number of days this interval represents.
+  pub const fn days(&self) -> i32 {
+    self.days
+  }
+
+  /// The absolute value of this interval.
   const fn abs(self) -> Self {
     Self { days: self.days.abs() }
   }
 }
 
-impl Neg for Duration {
+impl Neg for DateInterval {
   type Output = Self;
 
   fn neg(self) -> Self::Output {
@@ -35,16 +40,16 @@ impl Neg for Duration {
   }
 }
 
-impl Add<Duration> for Date {
+impl Add<DateInterval> for Date {
   type Output = Date;
 
   /// Return a new `Date` that is the given number of days later.
-  fn add(self, duration: Duration) -> Self::Output {
-    if duration.days < 0 {
-      return self.sub(duration.abs());
+  fn add(self, interval: DateInterval) -> Self::Output {
+    if interval.days < 0 {
+      return self.sub(interval.abs());
     }
     let mut year = self.year;
-    let mut day_of_year_0 = self.day_of_year_0 + duration.days as u16;
+    let mut day_of_year_0 = self.day_of_year_0 + interval.days as u16;
     while day_of_year_0 >= utils::days_in_year(year) {
       day_of_year_0 -= utils::days_in_year(year);
       year += 1;
@@ -53,12 +58,12 @@ impl Add<Duration> for Date {
   }
 }
 
-impl AddAssign<Duration> for Date {
-  fn add_assign(&mut self, duration: Duration) {
-    if duration.days < 0 {
-      return self.sub_assign(duration.abs());
+impl AddAssign<DateInterval> for Date {
+  fn add_assign(&mut self, interval: DateInterval) {
+    if interval.days < 0 {
+      return self.sub_assign(interval.abs());
     }
-    self.day_of_year_0 += duration.days as u16;
+    self.day_of_year_0 += interval.days as u16;
     while self.day_of_year_0 >= utils::days_in_year(self.year) {
       self.day_of_year_0 -= utils::days_in_year(self.year);
       self.year += 1;
@@ -66,17 +71,17 @@ impl AddAssign<Duration> for Date {
   }
 }
 
-impl Sub<Duration> for Date {
+impl Sub<DateInterval> for Date {
   type Output = Date;
 
   /// Return a new `Date` that is the given number of days earlier.
-  fn sub(self, duration: Duration) -> Self::Output {
-    if duration.days < 0 {
-      return self.add(duration.abs());
+  fn sub(self, interval: DateInterval) -> Self::Output {
+    if interval.days < 0 {
+      return self.add(interval.abs());
     }
 
     let mut year = self.year();
-    let mut subtracand = duration.days as u16;
+    let mut subtracand = interval.days as u16;
 
     // Knock off any full years.
     while subtracand > utils::days_in_year(year) {
@@ -99,12 +104,12 @@ impl Sub<Duration> for Date {
   }
 }
 
-impl SubAssign<Duration> for Date {
-  fn sub_assign(&mut self, duration: Duration) {
-    if duration.days < 0 {
-      return self.add_assign(duration.abs());
+impl SubAssign<DateInterval> for Date {
+  fn sub_assign(&mut self, interval: DateInterval) {
+    if interval.days < 0 {
+      return self.add_assign(interval.abs());
     }
-    let mut subtracand = duration.days as u16;
+    let mut subtracand = interval.days as u16;
 
     // Knock off any full years.
     while subtracand > utils::days_in_year(self.year) {
@@ -128,14 +133,14 @@ impl SubAssign<Duration> for Date {
 }
 
 impl Sub<Date> for Date {
-  type Output = Duration;
+  type Output = DateInterval;
 
   fn sub(self, rhs: Date) -> Self::Output {
     if rhs > self {
       return -(rhs - self);
     }
     let year_days: i32 = (rhs.year..=self.year).map(|y| utils::days_in_year(y) as i32).sum();
-    Duration::days(
+    DateInterval::new(
       year_days // 730
         - (utils::days_in_year(self.year) - self.day_of_year_0) as i32 // - 363
         - rhs.day_of_year_0 as i32, // - 363
@@ -156,21 +161,21 @@ mod tests {
       ($y1:literal-$m1:literal-$d1:literal + $dur:literal
           == $y2:literal-$m2:literal-$d2:literal) => {
         // Check `+`.
-        check!(Date::new($y1, $m1, $d1) + Duration::days($dur) == Date::new($y2, $m2, $d2));
+        check!(Date::new($y1, $m1, $d1) + DateInterval::new($dur) == Date::new($y2, $m2, $d2));
 
         // Check `+=`.
         let mut date = Date::new($y1, $m1, $d1);
-        date += Duration::days($dur);
+        date += DateInterval::new($dur);
         check!(date == Date::new($y2, $m2, $d2));
       };
       ($y1:literal-$m1:literal-$d1:literal - $dur:literal
           == $y2:literal-$m2:literal-$d2:literal) => {
         // Check `-`.
-        check!(Date::new($y1, $m1, $d1) - Duration::days($dur) == Date::new($y2, $m2, $d2));
+        check!(Date::new($y1, $m1, $d1) - DateInterval::new($dur) == Date::new($y2, $m2, $d2));
 
         // Check `-=`.
         let mut date = Date::new($y1, $m1, $d1);
-        date -= Duration::days($dur);
+        date -= DateInterval::new($dur);
         check!(date == Date::new($y2, $m2, $d2));
       };
     }
@@ -205,14 +210,14 @@ mod tests {
 
   #[test]
   fn test_sub_dates() {
-    check!(date! { 2012-04-21 } - date! { 2012-04-21 } == Duration::days(0));
-    check!(date! { 2012-04-22 } - date! { 2012-04-21 } == Duration::days(1));
-    check!(date! { 2012-04-24 } - date! { 2012-04-21 } == Duration::days(3));
-    check!(date! { 2012-04-20 } - date! { 2012-04-21 } == Duration::days(-1));
-    check!(date! { 2012-04-14 } - date! { 2012-04-21 } == Duration::days(-7));
-    check!(date! { 2012-01-02 } - date! { 2011-12-30 } == Duration::days(3));
-    check!(date! { 2011-12-30 } - date! { 2012-01-02 } == Duration::days(-3));
-    check!(date! { 2018-06-01 } - date! { 2016-06-01 } == Duration::days(730));
+    check!(date! { 2012-04-21 } - date! { 2012-04-21 } == DateInterval::new(0));
+    check!(date! { 2012-04-22 } - date! { 2012-04-21 } == DateInterval::new(1));
+    check!(date! { 2012-04-24 } - date! { 2012-04-21 } == DateInterval::new(3));
+    check!(date! { 2012-04-20 } - date! { 2012-04-21 } == DateInterval::new(-1));
+    check!(date! { 2012-04-14 } - date! { 2012-04-21 } == DateInterval::new(-7));
+    check!(date! { 2012-01-02 } - date! { 2011-12-30 } == DateInterval::new(3));
+    check!(date! { 2011-12-30 } - date! { 2012-01-02 } == DateInterval::new(-3));
+    check!(date! { 2018-06-01 } - date! { 2016-06-01 } == DateInterval::new(730));
 
     // Identity
     check!(
