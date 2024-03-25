@@ -1,13 +1,19 @@
 [package]
-name = "date"
-version = "0.3.0"
+name = "date-rs"
+version = "0.1.0"
 edition = "2021"
 authors = ["Luke Sneeringer <luke@sneeringer.com>"]
 rust-version = "1.70"
-license = "Proprietary"
-publish = ["ss151w"]
-repository = "https://github.com/ss151/date-rs"
-documentation = "https://rustdoc.highsignal.tech/date"
+license = "MIT"
+repository = "https://github.com/lukesneeringer/date-rs"
+exclude = [
+  "/.github/*",
+  "/rustfmt.toml",
+  "/.prettierrc.yaml",
+]
+
+[lib]
+name = "date"
 
 [dependencies]
 diesel = { version = "2", optional = true }
@@ -19,5 +25,5 @@ serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1" }
 
 [features]
-default = []
+default = ["serde"]
 diesel-pg = ["dep:diesel", "diesel/postgres"]

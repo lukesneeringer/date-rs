@@ -1,3 +1,5 @@
+//! Serialization to/from PostgreSQL
+
 use diesel::deserialize::FromSql;
 use diesel::deserialize::Result as DeserializeResult;
 use diesel::pg::data_types::PgDate;
