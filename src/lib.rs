@@ -68,7 +68,7 @@ pub use weekday::Weekday;
 /// A representation of a single date.
 #[derive(Copy, Clone, Eq, PartialEq, PartialOrd, Ord)]
 #[cfg_attr(feature = "diesel-pg", derive(diesel::AsExpression, diesel::FromSqlRow))]
-#[cfg_attr(feature = "diesel-pg", sql_type = "::diesel::sql_types::Date")]
+#[cfg_attr(feature = "diesel-pg", diesel(sql_type = ::diesel::sql_types::Date))]
 pub struct Date {
   pub(crate) year: i16,
   pub(crate) day_of_year_0: u16,
