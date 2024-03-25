@@ -12,7 +12,6 @@ jobs:
       - run: cargo test --all-features --workspace
         env:
           CARGO_NET_GIT_FETCH_WITH_CLI: true
-          CARGO_REGISTRIES_SS151_INDEX: ${{ secrets.CLOUDSMITH_CARGO_REPO }}
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -22,7 +21,6 @@ jobs:
       - run: cargo +nightly fmt -- --check
         env:
           CARGO_NET_GIT_FETCH_WITH_CLI: true
-          CARGO_REGISTRIES_SS151_INDEX: ${{ secrets.CLOUDSMITH_CARGO_REPO }}
   docs:
     runs-on: ubuntu-latest
     steps:
@@ -30,4 +28,3 @@ jobs:
       - run: cargo doc --no-deps --bins
         env:
           CARGO_NET_GIT_FETCH_WITH_CLI: true
-          CARGO_REGISTRIES_SS151_INDEX: ${{ secrets.CLOUDSMITH_CARGO_REPO }}
