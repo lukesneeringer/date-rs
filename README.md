@@ -1,9 +1,9 @@
 # Date
 
-[![ci](https://github.com/ss151/date-rs/actions/workflows/ci.yaml/badge.svg)](https://github.com/ss151/date-rs/actions/workflows/ci.yaml)
-[![codecov](https://codecov.io/gh/ss151/date-rs/branch/main/graph/badge.svg?token=FyWXWAuxMH)](https://codecov.io/gh/ss151/date-rs)
-[![release](https://api-prd.cloudsmith.io/v1/badges/version/ss151/rust/cargo/date/latest/x/?render=true&show_latest=false&badge_token=gAAAAABle61i4iPL0V1PXCIb3pbBNDLF1sO2N2w4Z68H3otd3wBLKVk-Hk4g1M6ywVqVsKmMMrnWOmFZpdGMkTZ90YKjXMw7yB_hC8vEEHJQUMkQAjDE87M%3D)](https://cloudsmith.io/~ss151/repos/rust/packages/detail/cargo/date/latest/)
-[![docs](https://img.shields.io/badge/docs-release-blue)](https://rustdoc.highsignal.tech/date/)
+[![ci](https://github.com/lukesneeringer/date-rs/actions/workflows/ci.yaml/badge.svg)](https://github.com/lukesneeringer/date-rs/actions/workflows/ci.yaml)
+[![codecov](https://codecov.io/gh/lukesneeringer/date-rs/branch/main/graph/badge.svg?token=oH2z7PFp06)](https://codecov.io/gh/lukesneeringer/date-rs)
+[![release](https://img.shields.io/crates/v/date-rs.svg)](https://crates.io/crates/date-rs)
+[![docs](https://img.shields.io/badge/docs-release-blue)](https://docs.rs/date-rs/latest/date/)
 
 The `date` crate provides a simple, easy-to-use `Date` struct (and corresponding macro). Date
 provides storage for a single Gregorian calendar date.

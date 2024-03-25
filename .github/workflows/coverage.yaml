@@ -21,10 +21,9 @@ jobs:
           cargo tarpaulin --verbose --out xml --engine llvm --features serde
         env:
           CARGO_NET_GIT_FETCH_WITH_CLI: true
-          CARGO_REGISTRIES_SS151_INDEX: ${{ secrets.CLOUDSMITH_CARGO_REPO }}
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          slug: ss151/date-rs
+          slug: lukesneeringer/date-rs
           fail_ci_if_error: true
