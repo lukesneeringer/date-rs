@@ -21,7 +21,7 @@ exclude = [
 name = "date"
 
 [dependencies]
-anyhow = { version = "1" }
+anyhow = { version = "1", optional = true }
 diesel = { version = "2", optional = true }
 serde = { version = "1", optional = true }
 tzdb = { version = "0.6", optional = true, features = ["local"] }
@@ -34,3 +34,4 @@ serde_json = { version = "1" }
 [features]
 default = ["serde"]
 diesel-pg = ["dep:diesel", "diesel/postgres"]
+tzdb = ["dep:anyhow", "dep:tzdb"]
