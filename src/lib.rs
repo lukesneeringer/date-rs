@@ -30,6 +30,8 @@
 //! - **`serde`**: Enables serialization and desearialization with `serde`. _(Enabled by default.)_
 
 use std::fmt;
+use std::time::SystemTime;
+use std::time::UNIX_EPOCH;
 
 /// Construct a date from a `YYYY-MM-DD` literal.
 ///
@@ -63,6 +65,7 @@ mod utils;
 mod weekday;
 
 pub use interval::DateInterval;
+use utils::days_in_year;
 pub use weekday::Weekday;
 
 /// A representation of a single date.
@@ -100,6 +103,50 @@ impl Date {
     // Get the proper day of the year.
     let day_of_year_0 = utils::bounds(year)[(month - 1) as usize] + day as u16 - 1;
     Self { year, day_of_year_0 }
+  }
+
+  /// Construct a new `Date` based on the Unix timestamp.
+  ///
+  /// ## Examples
+  ///
+  /// ```
+  /// use date::date;
+  /// use date::Date;
+  ///
+  /// let day_one = Date::from_timestamp(0);
+  /// assert_eq!(day_one, date! { 1970-01-01 });
+  /// let later = Date::from_timestamp(15_451 * 86_400);
+  /// assert_eq!(later, date! { 2012-04-21 });
+  /// ```
+  ///
+  /// Negative timestamps are also supported:
+  ///
+  /// ```
+  /// # use date::date;
+  /// # use date::Date;
+  /// let before_unix_era = Date::from_timestamp(-1);
+  /// assert_eq!(before_unix_era, date! { 1969-12-31 });
+  /// let hobbit_publication = Date::from_timestamp(-11_790 * 86_400);
+  /// assert_eq!(hobbit_publication, date! { 1937-09-21 });
+  /// ```
+  pub const fn from_timestamp(unix_timestamp: i64) -> Self {
+    let mut year = 1970;
+    let mut day_count: i32 = unix_timestamp.div_euclid(86_400) as i32;
+
+    // Is our date prior to 1970; if so, decrement the year. Intentionally overshoot; the remaining
+    // day count will effectively be the month and day.
+    while day_count < 0 {
+      year -= 1;
+      day_count += days_in_year(year) as i32;
+    }
+
+    // Work our way up through the years until we don't have enough days left.
+    while day_count > days_in_year(year) as i32 {
+      day_count -= days_in_year(year) as i32;
+      year += 1;
+    }
+
+    Self { year, day_of_year_0: day_count as u16 }
   }
 
   /// Construct a new `Date` from the provided year, month, and day.
@@ -233,6 +280,87 @@ impl Date {
 }
 
 impl Date {
+  /// The Unix timestamp for this date at midnight UTC.
+  ///
+  /// ## Examples
+  ///
+  /// ```
+  /// # use date::date;
+  /// assert_eq!(date! { 1969-12-31 }.timestamp(), -86_400);
+  /// assert_eq!(date! { 1970-01-01 }.timestamp(), 0);
+  /// assert_eq!(date! { 1970-01-05 }.timestamp(), 4 * 86_400);
+  /// assert_eq!(date! { 2012-04-21 }.timestamp(), 1334966400);
+  /// ```
+  pub const fn timestamp(&self) -> i64 {
+    let mut day_count = 0;
+
+    // Add the days for all completed years.
+    //
+    // If the year is prior to 1970, also add (subtract, really) the days for the year under
+    // consideration; that way we have a consistent baseline and can always add the month/day
+    // values.
+    match self.year >= 1970 {
+      true => {
+        let mut cursor = 1970;
+        while cursor < self.year {
+          day_count += days_in_year(cursor) as i64;
+          cursor += 1;
+        }
+      },
+      false => {
+        let mut cursor = 1969;
+        while cursor >= self.year {
+          day_count -= days_in_year(cursor) as i64;
+          cursor -= 1;
+        }
+      },
+    }
+
+    // Add the month and day.
+    (day_count + self.day_of_year_0 as i64) * 86_400
+  }
+}
+
+impl Date {
+  /// The date representing today, according to the system local clock.
+  ///
+  /// ## Panic
+  ///
+  /// This function will panic if the system clock is set to a time prior to January 1, 1970, or if
+  /// the local time zone can not be determined.
+  #[cfg(feature = "tzdb")]
+  pub fn today() -> Self {
+    let tz = tzdb::local_tz().expect("Could not determine local time zone");
+    let now =
+      now().duration_since(UNIX_EPOCH).expect("system time set prior to 1970").as_secs() as i64;
+    let offset = tz
+      .find_local_time_type(now)
+      .expect("Local time zone lacks information for this timestamp")
+      .ut_offset() as i64;
+    Self::from_timestamp(now + offset)
+  }
+
+  /// The date representing today, in the provided time zone.
+  #[cfg(feature = "tzdb")]
+  pub fn today_tz(tz: &'static str) -> anyhow::Result<Self> {
+    let tz = tzdb::tz_by_name(tz).ok_or(anyhow::format_err!("Time zone not found: {}", tz))?;
+    let now = now().duration_since(UNIX_EPOCH)?.as_secs() as i64;
+    let offset = tz.find_local_time_type(now)?.ut_offset() as i64;
+    Ok(Self::from_timestamp(now + offset))
+  }
+
+  /// The date representing today, in UTC.
+  ///
+  /// ## Panic
+  ///
+  /// This function will panic if the system clock is set to a time prior to January 1, 1970.
+  pub fn today_utc() -> Self {
+    let now = now().duration_since(UNIX_EPOCH).expect("system time set prior to 1970").as_secs();
+    Self::from_timestamp(now as i64)
+  }
+}
+
+impl Date {
   /// Format the date according to the provided `strftime` specifier.
   #[doc = include_str!("../support/date-format.md")]
   ///
@@ -256,11 +384,37 @@ impl fmt::Display for Date {
   }
 }
 
+#[cfg(not(test))]
+fn now() -> SystemTime {
+  SystemTime::now()
+}
+
+#[cfg(test)]
+use tests::now;
+
 #[cfg(test)]
 mod tests {
+  use std::cell::RefCell;
+
   use assert2::check;
 
   use super::*;
+
+  thread_local! {
+    static MOCK_TIME: RefCell<Option<SystemTime>> = const { RefCell::new(None) };
+  }
+
+  fn set_now(time: SystemTime) {
+    MOCK_TIME.with(|cell| *cell.borrow_mut() = Some(time));
+  }
+
+  fn clear_now() {
+    MOCK_TIME.with(|cell| *cell.borrow_mut() = None);
+  }
+
+  pub(super) fn now() -> SystemTime {
+    MOCK_TIME.with(|cell| cell.borrow().as_ref().cloned().unwrap_or_else(SystemTime::now))
+  }
 
   #[test]
   fn test_ymd_readback() {
@@ -350,5 +504,22 @@ mod tests {
   fn test_display() {
     check!(date! { 2012-04-21 }.to_string() == "2012-04-21");
     check!(format!("{:?}", date! { 2012-04-21 }) == "2012-04-21");
+  }
+
+  #[test]
+  fn test_today() {
+    set_now(SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(86_400));
+    check!(Date::today_utc() == date! { 1970-01-02 });
+    clear_now();
+  }
+
+  #[cfg(feature = "tzdb")]
+  #[test]
+  fn test_today_tz() -> anyhow::Result<()> {
+    set_now(SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(86_400));
+    check!([date! { 1970-01-01 }, date! { 1970-01-02 }].contains(&Date::today()));
+    check!(Date::today_tz("America/New_York")? == date! { 1970-01-01 });
+    clear_now();
+    Ok(())
   }
 }

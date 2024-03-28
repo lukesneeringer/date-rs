@@ -1,6 +1,6 @@
 [package]
 name = "date-rs"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 authors = ["Luke Sneeringer <luke@sneeringer.com>"]
 description = "Gregorian calendar date"
@@ -21,8 +21,10 @@ exclude = [
 name = "date"
 
 [dependencies]
+anyhow = { version = "1", optional = true }
 diesel = { version = "2", optional = true }
 serde = { version = "1", optional = true }
+tzdb = { version = "0.6", optional = true, features = ["local"] }
 
 [dev-dependencies]
 assert2 = "0.3"
@@ -32,3 +34,4 @@ serde_json = { version = "1" }
 [features]
 default = ["serde"]
 diesel-pg = ["dep:diesel", "diesel/postgres"]
+tzdb = ["dep:anyhow", "dep:tzdb"]
