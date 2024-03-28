@@ -33,8 +33,6 @@ use std::fmt;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
-use anyhow::Result;
-
 /// Construct a date from a `YYYY-MM-DD` literal.
 ///
 /// ## Examples
@@ -344,7 +342,7 @@ impl Date {
 
   /// The date representing today, in the provided time zone.
   #[cfg(feature = "tzdb")]
-  pub fn today_tz(tz: &'static str) -> Result<Self> {
+  pub fn today_tz(tz: &'static str) -> anyhow::Result<Self> {
     let tz = tzdb::tz_by_name(tz).ok_or(anyhow::format_err!("Time zone not found: {}", tz))?;
     let now = now().duration_since(UNIX_EPOCH)?.as_secs() as i64;
     let offset = tz.find_local_time_type(now)?.ut_offset() as i64;
