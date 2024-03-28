@@ -515,7 +515,7 @@ mod tests {
 
   #[cfg(feature = "tzdb")]
   #[test]
-  fn test_today_tz() -> Result<()> {
+  fn test_today_tz() -> anyhow::Result<()> {
     set_now(SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(86_400));
     check!([date! { 1970-01-01 }, date! { 1970-01-02 }].contains(&Date::today()));
     check!(Date::today_tz("America/New_York")? == date! { 1970-01-01 });
