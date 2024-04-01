@@ -1,6 +1,6 @@
 [package]
 name = "date-rs"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2021"
 authors = ["Luke Sneeringer <luke@sneeringer.com>"]
 description = "Gregorian calendar date"
@@ -34,4 +34,5 @@ serde_json = { version = "1" }
 [features]
 default = ["serde"]
 diesel-pg = ["dep:diesel", "diesel/postgres"]
+easter = []
 tzdb = ["dep:anyhow", "dep:tzdb"]

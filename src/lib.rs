@@ -372,6 +372,29 @@ impl Date {
   }
 }
 
+#[cfg(feature = "easter")]
+impl Date {
+  /// The date of Easter in the Gregorian calendar for the given year.
+  pub const fn easter(year: i16) -> Self {
+    assert!(year >= 1583 || year <= 9999, "Year out of bounds");
+    let a = year % 19;
+    let b = year / 100;
+    let c = year % 100;
+    let d = b / 4;
+    let e = b % 4;
+    let f = (b + 8) / 25;
+    let g = (b - f + 1) / 3;
+    let h = (19 * a + b - d - g + 15) % 30;
+    let i = c / 4;
+    let j = c % 4;
+    let k = (32 + 2 * e + 2 * i - h - j) % 7;
+    let l = (a + 11 * h + 22 * k) / 451;
+    let month = (h + k - 7 * l + 114) / 31;
+    let day = (h + k - 7 * l + 114) % 31 + 1;
+    Self::new(year, month as u8, day as u8)
+  }
+}
+
 impl fmt::Debug for Date {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     write!(f, "{}", self.format("%Y-%m-%d"))
@@ -521,5 +544,33 @@ mod tests {
     check!(Date::today_tz("America/New_York")? == date! { 1970-01-01 });
     clear_now();
     Ok(())
+  }
+
+  #[cfg(feature = "easter")]
+  #[test]
+  fn test_easter() {
+    check!(Date::easter(2013) == date! { 2013-03-31 });
+    check!(Date::easter(2014) == date! { 2014-04-20 });
+    check!(Date::easter(2015) == date! { 2015-04-05 });
+    check!(Date::easter(2016) == date! { 2016-03-27 });
+    check!(Date::easter(2017) == date! { 2017-04-16 });
+    check!(Date::easter(2018) == date! { 2018-04-01 });
+    check!(Date::easter(2019) == date! { 2019-04-21 });
+    check!(Date::easter(2020) == date! { 2020-04-12 });
+    check!(Date::easter(2021) == date! { 2021-04-04 });
+    check!(Date::easter(2022) == date! { 2022-04-17 });
+    check!(Date::easter(2023) == date! { 2023-04-09 });
+    check!(Date::easter(2024) == date! { 2024-03-31 });
+    check!(Date::easter(2025) == date! { 2025-04-20 });
+    check!(Date::easter(2026) == date! { 2026-04-05 });
+    check!(Date::easter(2027) == date! { 2027-03-28 });
+    check!(Date::easter(2028) == date! { 2028-04-16 });
+    check!(Date::easter(2029) == date! { 2029-04-01 });
+    check!(Date::easter(2030) == date! { 2030-04-21 });
+    check!(Date::easter(2031) == date! { 2031-04-13 });
+    check!(Date::easter(2032) == date! { 2032-03-28 });
+    check!(Date::easter(2033) == date! { 2033-04-17 });
+    check!(Date::easter(2034) == date! { 2034-04-09 });
+    check!(Date::easter(2035) == date! { 2035-03-25 });
   }
 }
