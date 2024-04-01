@@ -80,6 +80,11 @@ mod tests {
     check!(date! { 2300-01-01 }.weekday() == Weekday::Monday);
     check!(date! { 2400-01-01 }.weekday() == Weekday::Saturday);
     check!(date! { 2500-01-01 }.weekday() == Weekday::Friday);
+
+    // And some around now...
+    check!(date! { 2021-07-04 }.weekday() == Weekday::Sunday);
+    check!(date! { 2024-03-31 }.weekday() == Weekday::Sunday);
+    check!(date! { 2024-11-28 }.weekday() == Weekday::Thursday);
   }
 
   #[test]
