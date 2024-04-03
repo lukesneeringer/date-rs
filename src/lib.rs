@@ -21,17 +21,15 @@
 //!
 //! let date = date! { 2012-04-21 };
 //! ```
-//!
-//! ## Features
-//!
-//! `date-rs` ships with the following features:
-//!
-//! - **`diesel-pg`**: Enables interop with PostgreSQL `DATE` columns using Diesel.
-//! - **`serde`**: Enables serialization and desearialization with `serde`. _(Enabled by default.)_
 
 use std::fmt;
+use std::str::FromStr;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
+
+use strptime::ParseError;
+use strptime::ParseResult;
+use strptime::Parser;
 
 /// Construct a date from a `YYYY-MM-DD` literal.
 ///
@@ -58,7 +56,6 @@ macro_rules! date {
 mod db;
 mod format;
 mod interval;
-mod parse;
 #[cfg(feature = "serde")]
 mod serde;
 mod utils;
@@ -189,6 +186,12 @@ impl Date {
 
     // Return the date.
     Self { year, day_of_year_0 }
+  }
+
+  pub fn parse(date_str: impl AsRef<str>, date_fmt: &'static str) -> ParseResult<Date> {
+    let parser = Parser::new(date_fmt);
+    let raw_date = parser.parse(date_str)?.date()?;
+    Ok(raw_date.into())
   }
 
   /// Return true if this date is during a leap year, false otherwise.
@@ -407,6 +410,20 @@ impl fmt::Display for Date {
   }
 }
 
+impl FromStr for Date {
+  type Err = ParseError;
+
+  fn from_str(s: &str) -> ParseResult<Self> {
+    Self::parse(s, "%Y-%m-%d")
+  }
+}
+
+impl From<strptime::RawDate> for Date {
+  fn from(value: strptime::RawDate) -> Self {
+    Self::new(value.year(), value.month(), value.day())
+  }
+}
+
 #[cfg(not(test))]
 fn now() -> SystemTime {
   SystemTime::now()
@@ -572,5 +589,22 @@ mod tests {
     check!(Date::easter(2033) == date! { 2033-04-17 });
     check!(Date::easter(2034) == date! { 2034-04-09 });
     check!(Date::easter(2035) == date! { 2035-03-25 });
+  }
+
+  #[test]
+  fn test_from_str() -> ParseResult<()> {
+    check!("2012-04-21".parse::<Date>()? == date! { 2012-04-21 });
+    check!("2012-4-21".parse::<Date>().is_err());
+    check!("04/21/2012".parse::<Date>().is_err());
+    check!("12-04-21".parse::<Date>().is_err());
+    check!("foo".parse::<Date>().map_err(|e| e.to_string()).unwrap_err().contains("foo"));
+    Ok(())
+  }
+
+  #[test]
+  fn test_parse() -> ParseResult<()> {
+    check!(Date::parse("04/21/12", "%m/%d/%y")? == date! { 2012-04-21 });
+    check!(Date::parse("Saturday, April 21, 2012", "%A, %B %-d, %Y")? == date! { 2012-04-21 });
+    Ok(())
   }
 }
