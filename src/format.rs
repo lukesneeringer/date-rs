@@ -74,12 +74,10 @@ impl<'a> Display for FormattedDate<'a> {
           '%' => f.write_char('%')?,
           _ => Err(Error)?,
         }
-      }
-      else if c == '%' {
+      } else if c == '%' {
         flag = true;
         padding = Padding::Default;
-      }
-      else {
+      } else {
         f.write_char(c)?;
       }
     }
