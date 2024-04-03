@@ -1,7 +1,6 @@
 brace_style = "PreferSameLine"
 comment_width = 99
 combine_control_expr = true
-control_brace_style = "ClosingNextLine"
 format_code_in_doc_comments = true
 format_strings = true
 fn_args_layout = "Compressed"
