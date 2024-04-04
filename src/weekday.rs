@@ -46,7 +46,7 @@ mod tests {
   use assert2::check;
 
   use super::*;
-  use crate::DateInterval;
+  use crate::interval::DateInterval;
 
   #[test]
   fn test_weekday() {
