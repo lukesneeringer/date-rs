@@ -15,7 +15,7 @@ use crate::DateInterval;
 
 impl ToSql<sql_types::Date, Pg> for Date {
   fn to_sql<'se>(&'se self, out: &mut Output<'se, '_, Pg>) -> SerializeResult {
-    let days_since_epoch = (*self - PG_EPOCH).days;
+    let days_since_epoch = (*self - PG_EPOCH).days();
     ToSql::<sql_types::Date, Pg>::to_sql(&PgDate(days_since_epoch), &mut out.reborrow())
   }
 }
