@@ -56,6 +56,7 @@ macro_rules! date {
 mod db;
 mod format;
 pub(crate) mod interval; // FIXME: Change to `pub` in 1.0.
+pub mod iter;
 #[cfg(feature = "serde")]
 mod serde;
 mod utils;
@@ -382,6 +383,21 @@ impl Date {
   pub fn format<'a>(&'a self, format_str: &'a str) -> format::FormattedDate {
     format::FormattedDate { date: self, format: format_str }
   }
+}
+
+impl Date {
+  /// An iterator of dates beginning with this date, and ending with the provided end date
+  /// (inclusive).
+  pub fn iter_through(&self, end: Date) -> iter::DateIterator {
+    iter::DateIterator::new(self, end)
+  }
+}
+
+impl Date {
+  /// The maximum date that can be represented.
+  pub const MAX: Self = Date::new(32767, 12, 31);
+  /// The minimum date that can be represented.
+  pub const MIN: Self = Date::new(-32768, 1, 1);
 }
 
 #[cfg(feature = "easter")]
