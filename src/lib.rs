@@ -55,14 +55,14 @@ macro_rules! date {
 #[cfg(feature = "diesel-pg")]
 mod db;
 mod format;
-mod interval;
+pub(crate) mod interval; // FIXME: Change to `pub` in 1.0.
 #[cfg(feature = "serde")]
 mod serde;
 mod utils;
 mod weekday;
 
-pub use interval::DateInterval;
-pub use interval::MonthInterval;
+pub use interval::DateInterval; // FIXME: Remove in 1.0.
+pub use interval::MonthInterval; // FIXME: Remove in 1.0.
 use utils::days_in_year;
 pub use weekday::Weekday;
 

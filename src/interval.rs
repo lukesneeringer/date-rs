@@ -1,3 +1,7 @@
+//! Intervals that can be added to or subtracted from dates.
+//!
+//! In addition, dates can be subtracted from one another, and the result is a [`DateInterval`].
+
 use std::ops::Add;
 use std::ops::AddAssign;
 use std::ops::Neg;
@@ -7,7 +11,10 @@ use std::ops::SubAssign;
 use crate::utils;
 use crate::Date;
 
-/// DateInterval with day-level precision only.
+/// An interval of days.
+///
+/// Intervals can be positive or negative, in part because the difference between two dates is
+/// expressed as a [`DateInterval`].
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(transparent)]
 pub struct DateInterval {
@@ -27,7 +34,7 @@ impl DateInterval {
   }
 
   /// The absolute value of this interval.
-  const fn abs(self) -> Self {
+  pub const fn abs(self) -> Self {
     Self { days: self.days.abs() }
   }
 }
@@ -148,7 +155,7 @@ impl Sub<Date> for Date {
   }
 }
 
-/// A representation of an interval of months.
+/// An interval of months.
 ///
 /// Unlike [`DateInterval`], this only represents positive numbers of months, because we never
 /// receive this object as a result of subtracting one [`Date`] from another; instead, this
