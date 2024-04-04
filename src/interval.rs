@@ -11,7 +11,7 @@ use crate::Date;
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(transparent)]
 pub struct DateInterval {
-  pub days: i32,
+  days: i32,
 }
 
 impl DateInterval {
@@ -148,6 +148,73 @@ impl Sub<Date> for Date {
   }
 }
 
+/// A representation of an interval of months.
+///
+/// Unlike [`DateInterval`], this only represents positive numbers of months, because we never
+/// receive this object as a result of subtracting one [`Date`] from another; instead, this
+/// object's sole purpose is to create month intervals to add or subtract from dates.
+///
+/// In the event that a month interval is added to a date where the day of the month exceeds the
+/// number of days in the result month, the day is set to the final day of the result month.
+/// Therefore, adding one month to `2021-01-31` will return `2021-02-28`.
+///
+/// Importantly, this means that addition and subtraction are not necessarily communitive.
+///
+/// ## Example
+///
+/// ```
+/// use date::date;
+/// use date::MonthInterval;
+///
+/// assert_eq!(date! { 2012-04-21 } + MonthInterval::new(3), date! { 2012-07-21 });
+/// assert_eq!(date! { 2021-12-31 } + MonthInterval::new(2), date! { 2022-02-28 });
+/// ```
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
+#[repr(transparent)]
+pub struct MonthInterval {
+  months: u8,
+}
+
+impl MonthInterval {
+  /// Create a new month interval
+  pub const fn new(months: u8) -> Self {
+    assert!(months <= 255 - 12, "MonthInterval out of bounds.");
+    Self { months }
+  }
+
+  /// The number of months this interval represents.
+  pub const fn months(&self) -> u8 {
+    self.months
+  }
+}
+
+impl Add<MonthInterval> for Date {
+  type Output = Self;
+
+  fn add(self, interval: MonthInterval) -> Self {
+    saturated_date(self.year(), self.month() + interval.months(), self.day())
+  }
+}
+
+impl Sub<MonthInterval> for Date {
+  type Output = Self;
+
+  fn sub(self, interval: MonthInterval) -> Self {
+    let year = self.year() - interval.months().div_ceil(12) as i16;
+    saturated_date(year, self.month() + (12 - interval.months() % 12), self.day())
+  }
+}
+
+/// If the provided day falls after the final day of the month, return the final day of the month.
+fn saturated_date(year: i16, month: u8, day: u8) -> Date {
+  Date::overflowing_new(year, month, match month % 12 {
+    1 | 3 | 5 | 7 | 8 | 10 | 0 => day.min(31),
+    4 | 6 | 9 | 11 => day.min(30),
+    2 => day.min(if utils::is_leap_year(year + month as i16 / 12) { 29 } else { 28 }),
+    _ => unreachable!("n % 12 is always 0..=11"),
+  })
+}
+
 #[cfg(test)]
 #[allow(clippy::zero_prefixed_literal)]
 mod tests {
@@ -223,5 +290,28 @@ mod tests {
     check!(
       date! { 2012-04-18 } + (date! { 2012-04-21 } - date! { 2012-04-18 }) == date! { 2012-04-21 }
     );
+  }
+
+  #[test]
+  fn test_add_sub_months() {
+    macro_rules! prove {
+      ($y1:literal-$m1:literal-$d1:literal + $dur:literal months
+          == $y2:literal-$m2:literal-$d2:literal) => {
+        // Check `+`.
+        check!(Date::new($y1, $m1, $d1) + MonthInterval::new($dur) == Date::new($y2, $m2, $d2));
+
+        // Check `-`.
+        check!(Date::new($y2, $m2, $d2) - MonthInterval::new($dur) == Date::new($y1, $m1, $d1));
+      };
+    }
+
+    prove! { 2020-04-15 + 3 months == 2020-07-15 };
+    prove! { 2019-11-30 + 5 months == 2020-04-30 };
+    prove! { 2023-12-15 + 1 months == 2024-01-15 };
+    prove! { 2012-04-21 + 18 months == 2013-10-21 };
+    prove! { 2023-11-28 + 18 months == 2025-05-28 };
+
+    // Coercsion of days (non-communicative).
+    check!(date! { 2020-01-31 } + MonthInterval::new(1) == date! { 2020-02-29 });
   }
 }

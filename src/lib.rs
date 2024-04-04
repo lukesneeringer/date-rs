@@ -62,6 +62,7 @@ mod utils;
 mod weekday;
 
 pub use interval::DateInterval;
+pub use interval::MonthInterval;
 use utils::days_in_year;
 pub use weekday::Weekday;
 
@@ -144,6 +145,14 @@ impl Date {
     }
 
     Self { year, day_of_year_0: day_count as u16 }
+  }
+
+  /// The date on which the given timestamp occurred in the provided time zone.
+  #[cfg(feature = "tzdb")]
+  pub fn from_timestamp_tz(unix_timestamp: i64, tz: &'static str) -> anyhow::Result<Self> {
+    let tz = tzdb::tz_by_name(tz).ok_or(anyhow::format_err!("Time zone not found: {}", tz))?;
+    let offset = tz.find_local_time_type(now)?.ut_offset() as i64;
+    Ok(Self::from_timestamp(unix_timestamp + offset))
   }
 
   /// Construct a new `Date` from the provided year, month, and day.
