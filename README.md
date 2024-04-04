@@ -8,7 +8,7 @@
 The `date` crate provides a simple, easy-to-use `Date` struct (and corresponding macro). Date
 provides storage for a single Gregorian calendar date.
 
-`Date` can currently store any valid calendar date between years -65,536 and -65,535, although this
+`Date` can currently store any valid calendar date between years -32,768 and 32,767, although this
 may change in the future if its internal representation changes.
 
 ## Examples
