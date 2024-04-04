@@ -18,7 +18,7 @@ use crate::Date;
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(transparent)]
 pub struct DateInterval {
-  days: i32,
+  pub days: i32, // FIXME: Make private in 1.0.
 }
 
 impl DateInterval {
