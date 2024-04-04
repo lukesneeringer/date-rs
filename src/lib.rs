@@ -151,7 +151,7 @@ impl Date {
   #[cfg(feature = "tzdb")]
   pub fn from_timestamp_tz(unix_timestamp: i64, tz: &'static str) -> anyhow::Result<Self> {
     let tz = tzdb::tz_by_name(tz).ok_or(anyhow::format_err!("Time zone not found: {}", tz))?;
-    let offset = tz.find_local_time_type(now)?.ut_offset() as i64;
+    let offset = tz.find_local_time_type(unix_timestamp)?.ut_offset() as i64;
     Ok(Self::from_timestamp(unix_timestamp + offset))
   }
 
@@ -569,6 +569,14 @@ mod tests {
     check!([date! { 1970-01-01 }, date! { 1970-01-02 }].contains(&Date::today()));
     check!(Date::today_tz("America/New_York")? == date! { 1970-01-01 });
     clear_now();
+    Ok(())
+  }
+
+  #[cfg(feature = "tzdb")]
+  #[test]
+  fn test_timestamp_tz() -> anyhow::Result<()> {
+    check!(Date::from_timestamp_tz(1335020400, "America/New_York")? == date! { 2012-04-21 });
+    check!(Date::from_timestamp_tz(0, "America/Los_Angeles")? == date! { 1969-12-31 });
     Ok(())
   }
 
