@@ -52,29 +52,13 @@ impl Add<DateInterval> for Date {
 
   /// Return a new `Date` that is the given number of days later.
   fn add(self, interval: DateInterval) -> Self::Output {
-    if interval.days < 0 {
-      return self.sub(interval.abs());
-    }
-    let mut year = self.year;
-    let mut day_of_year_0 = self.day_of_year_0 + interval.days as u16;
-    while day_of_year_0 >= utils::days_in_year(year) {
-      day_of_year_0 -= utils::days_in_year(year);
-      year += 1;
-    }
-    Date { year, day_of_year_0 }
+    Date(self.0 + interval.days())
   }
 }
 
 impl AddAssign<DateInterval> for Date {
   fn add_assign(&mut self, interval: DateInterval) {
-    if interval.days < 0 {
-      return self.sub_assign(interval.abs());
-    }
-    self.day_of_year_0 += interval.days as u16;
-    while self.day_of_year_0 >= utils::days_in_year(self.year) {
-      self.day_of_year_0 -= utils::days_in_year(self.year);
-      self.year += 1;
-    }
+    self.0 += interval.days();
   }
 }
 
@@ -83,59 +67,13 @@ impl Sub<DateInterval> for Date {
 
   /// Return a new `Date` that is the given number of days earlier.
   fn sub(self, interval: DateInterval) -> Self::Output {
-    if interval.days < 0 {
-      return self.add(interval.abs());
-    }
-
-    let mut year = self.year();
-    let mut subtracand = interval.days as u16;
-
-    // Knock off any full years.
-    while subtracand > utils::days_in_year(year) {
-      year -= 1;
-      subtracand -= utils::days_in_year(year);
-    }
-
-    // Is the subtracand smaller? Then it's an earlier date in the same year,
-    // and we can just return that.
-    //
-    // On the other hand, if the subtracand is larger, that means it's a later
-    // date in the immediately prior year.
-    match subtracand <= self.day_of_year_0 {
-      true => Date { year, day_of_year_0: self.day_of_year_0 - subtracand },
-      false => Date {
-        year: year - 1,
-        day_of_year_0: utils::days_in_year(year - 1) + self.day_of_year_0 - subtracand,
-      },
-    }
+    Date(self.0 - interval.days())
   }
 }
 
 impl SubAssign<DateInterval> for Date {
   fn sub_assign(&mut self, interval: DateInterval) {
-    if interval.days < 0 {
-      return self.add_assign(interval.abs());
-    }
-    let mut subtracand = interval.days as u16;
-
-    // Knock off any full years.
-    while subtracand > utils::days_in_year(self.year) {
-      self.year -= 1;
-      subtracand -= utils::days_in_year(self.year);
-    }
-
-    // Is the subtracand smaller? Then it's an earlier date in the same year,
-    // and we can just set that.
-    //
-    // On the other hand, if the subtracand is larger, that means it's a later
-    // date in the immediately prior year.
-    match subtracand <= self.day_of_year_0 {
-      true => self.day_of_year_0 -= subtracand,
-      false => {
-        self.year -= 1;
-        self.day_of_year_0 = utils::days_in_year(self.year) + self.day_of_year_0 - subtracand;
-      },
-    }
+    self.0 -= interval.days();
   }
 }
 
@@ -143,15 +81,7 @@ impl Sub<Date> for Date {
   type Output = DateInterval;
 
   fn sub(self, rhs: Date) -> Self::Output {
-    if rhs > self {
-      return -(rhs - self);
-    }
-    let year_days: i32 = (rhs.year..=self.year).map(|y| utils::days_in_year(y) as i32).sum();
-    DateInterval::new(
-      year_days // 730
-        - (utils::days_in_year(self.year) - self.day_of_year_0) as i32 // - 363
-        - rhs.day_of_year_0 as i32, // - 363
-    )
+    DateInterval::new(self.0 - rhs.0)
   }
 }
 
