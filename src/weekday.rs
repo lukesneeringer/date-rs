@@ -50,6 +50,8 @@ mod tests {
 
   #[test]
   fn test_weekday() {
+    check!(date! { 1970-01-01 }.weekday() == Weekday::Thursday);
+
     let mut date = date! { 2019-12-29 }; // A Sunday.
     for weekday in [
       Weekday::Sunday,

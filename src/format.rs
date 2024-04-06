@@ -23,6 +23,7 @@ impl<'a> Display for FormattedDate<'a> {
   fn fmt(&self, f: &mut Formatter<'_>) -> Result {
     // Iterate over the format string and consume it.
     let d = self.date;
+    let ymd = self.date.ymd();
     let mut flag = false;
     let mut padding = Padding::Default;
     for c in self.format.chars() {
@@ -50,13 +51,13 @@ impl<'a> Display for FormattedDate<'a> {
         // Write out the formatted component.
         flag = false;
         match c {
-          'Y' => write_padded!(f, padding, 4, d.year)?,
-          'C' => write_padded!(f, padding, 2, d.year / 100)?,
-          'y' => write_padded!(f, padding, 2, d.year % 100)?,
-          'm' => write_padded!(f, padding, 2, d.month())?,
+          'Y' => write_padded!(f, padding, 4, ymd.0)?,
+          'C' => write_padded!(f, padding, 2, ymd.0 / 100)?,
+          'y' => write_padded!(f, padding, 2, ymd.0 % 100)?,
+          'm' => write_padded!(f, padding, 2, ymd.1)?,
           'b' | 'h' => write!(f, "{}", d.month_abbv())?,
           'B' => write!(f, "{}", d.month_name())?,
-          'd' => write_padded!(f, padding, 2, d.day())?,
+          'd' => write_padded!(f, padding, 2, ymd.2)?,
           'a' => write!(f, "{}", d.weekday().abbv())?,
           'A' => write!(f, "{}", d.weekday())?,
           'w' => write!(f, "{}", d.weekday() as u8)?,
@@ -65,9 +66,9 @@ impl<'a> Display for FormattedDate<'a> {
             _ => self.date.weekday() as u8,
           })?,
           // U, W
-          'j' => write_padded!(f, padding, 3, d.day_of_year_0 + 1)?,
-          'D' => write!(f, "{:02}/{:02}/{:02}", d.month(), d.day(), d.year)?,
-          'F' => write!(f, "{:04}-{:02}-{:02}", d.year, d.month(), d.day())?,
+          'j' => write_padded!(f, padding, 3, d.day_of_year())?,
+          'D' => write!(f, "{:02}/{:02}/{:02}", ymd.1, ymd.2, ymd.0)?,
+          'F' => write!(f, "{:04}-{:02}-{:02}", ymd.0, ymd.1, ymd.2)?,
           'v' => write!(f, "{:2}-{}-{:04}", d.day(), d.month_abbv(), d.year())?,
           't' => f.write_char('\t')?,
           'n' => f.write_char('\n')?,

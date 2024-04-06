@@ -64,17 +64,14 @@ mod weekday;
 
 pub use interval::DateInterval; // FIXME: Remove in 1.0.
 pub use interval::MonthInterval; // FIXME: Remove in 1.0.
-use utils::days_in_year;
 pub use weekday::Weekday;
 
 /// A representation of a single date.
 #[derive(Copy, Clone, Eq, PartialEq, PartialOrd, Ord)]
 #[cfg_attr(feature = "diesel-pg", derive(diesel::AsExpression, diesel::FromSqlRow))]
 #[cfg_attr(feature = "diesel-pg", diesel(sql_type = ::diesel::sql_types::Date))]
-pub struct Date {
-  pub(crate) year: i16,
-  pub(crate) day_of_year_0: u16,
-}
+#[repr(transparent)]
+pub struct Date(i32);
 
 impl Date {
   /// Construct a new `Date` from the provided year, month, and day.
@@ -84,6 +81,9 @@ impl Date {
   /// ```
   /// use date::Date;
   /// let date = Date::new(2012, 4, 21);
+  /// assert_eq!(date.year(), 2012);
+  /// assert_eq!(date.month(), 4);
+  /// assert_eq!(date.day(), 21);
   /// ```
   ///
   /// ## Panic
@@ -99,9 +99,17 @@ impl Date {
       assert!(utils::is_leap_year(year), "February 29 only occurs on leap years")
     }
 
-    // Get the proper day of the year.
-    let day_of_year_0 = utils::bounds(year)[(month - 1) as usize] + day as u16 - 1;
-    Self { year, day_of_year_0 }
+    // The algorithm to convert from a civil year/month/day to the number of days that have elapsed
+    // since the epoch is taken from here:
+    // https://howardhinnant.github.io/date_algorithms.html#days_from_civil
+    let year = year as i32 - if month <= 2 { 1 } else { 0 };
+    let month = month as i32;
+    let day = day as i32;
+    let era: i32 = if year >= 0 { year } else { year - 399 } / 400;
+    let year_of_era = year - era * 400;
+    let day_of_year = (153 * (if month > 2 { month - 3 } else { month + 9 }) + 2) / 5 + day - 1;
+    let day_of_era = year_of_era * 365 + year_of_era / 4 - year_of_era / 100 + day_of_year;
+    Self(era * 146097 + day_of_era - 719468)
   }
 
   /// Construct a new `Date` based on the Unix timestamp.
@@ -129,23 +137,8 @@ impl Date {
   /// assert_eq!(hobbit_publication, date! { 1937-09-21 });
   /// ```
   pub const fn from_timestamp(unix_timestamp: i64) -> Self {
-    let mut year = 1970;
-    let mut day_count: i32 = unix_timestamp.div_euclid(86_400) as i32;
-
-    // Is our date prior to 1970; if so, decrement the year. Intentionally overshoot; the remaining
-    // day count will effectively be the month and day.
-    while day_count < 0 {
-      year -= 1;
-      day_count += days_in_year(year) as i32;
-    }
-
-    // Work our way up through the years until we don't have enough days left.
-    while day_count > days_in_year(year) as i32 {
-      day_count -= days_in_year(year) as i32;
-      year += 1;
-    }
-
-    Self { year, day_of_year_0: day_count as u16 }
+    let day_count = unix_timestamp.div_euclid(86_400) as i32;
+    Self(day_count)
   }
 
   /// The date on which the given timestamp occurred in the provided time zone.
@@ -175,46 +168,62 @@ impl Date {
       year += 1;
       month -= 12;
     }
+    if day == 0 {
+      if month <= 1 {
+        year -= 1;
+        month += 11;
+      } else {
+        month -= 1;
+      }
+      day = utils::days_in_month(year, month);
+    }
     if month == 0 {
       year -= 1;
       month = 12;
     }
-    if month == 1 && day == 0 {
-      year -= 1;
-      month = 12;
-      day = 31;
-    }
-
-    // Get the proper day of the year.
-    let mut day_of_year_0 = utils::bounds(year)[(month - 1) as usize] + day as u16 - 1;
-
-    // Handle day overflows.
-    while day_of_year_0 >= utils::days_in_year(year) {
-      day_of_year_0 -= utils::days_in_year(year);
-      year += 1;
+    while day > utils::days_in_month(year, month) {
+      day -= utils::days_in_month(year, month);
+      month += 1;
+      if month == 13 {
+        year += 1;
+        month = 1;
+      }
     }
 
     // Return the date.
-    Self { year, day_of_year_0 }
+    Self::new(year, month, day)
   }
 
+  /// Parse a date from a string, according to the provided format string.
   pub fn parse(date_str: impl AsRef<str>, date_fmt: &'static str) -> ParseResult<Date> {
     let parser = Parser::new(date_fmt);
     let raw_date = parser.parse(date_str)?.date()?;
     Ok(raw_date.into())
   }
-
-  /// Return true if this date is during a leap year, false otherwise.
-  pub(crate) const fn is_leap_year(&self) -> bool {
-    utils::is_leap_year(self.year())
-  }
 }
 
 impl Date {
+  /// The year, month, and day for the given date.
+  pub(crate) const fn ymd(&self) -> (i16, u8, u8) {
+    // The algorithm to convert from a civil year/month/day to the number of days that have elapsed
+    // since the epoch is taken from here:
+    // https://howardhinnant.github.io/date_algorithms.html#civil_from_days
+    let shifted = self.0 + 719468; // Days from March 1, 0 A.D.
+    let era = if shifted >= 0 { shifted } else { shifted - 146_096 } / 146_097;
+    let doe = shifted - era * 146_097; // day of era: [0, 146_097)
+    let year_of_era = (doe - doe / 1_460 + doe / 36_524 - doe / 146_096) / 365;
+    let year = year_of_era + era * 400;
+    let day_of_year = doe - (365 * year_of_era + year_of_era / 4 - year_of_era / 100);
+    let mp = (5 * day_of_year + 2) / 153;
+    let day = day_of_year - (153 * mp + 2) / 5 + 1;
+    let month = if mp < 10 { mp + 3 } else { mp - 9 };
+    (year as i16 + if month <= 2 { 1 } else { 0 }, month as u8, day as u8)
+  }
+
   /// Returns the year number in the calendar date.
   #[inline]
   pub const fn year(&self) -> i16 {
-    self.year
+    self.ymd().0
   }
 
   /// Returns the month number, starting from 1.
@@ -222,16 +231,7 @@ impl Date {
   /// The return value ranges from 1 to 12.
   #[inline]
   pub const fn month(&self) -> u8 {
-    macro_rules! month {
-      ($($m:literal),*) => {{
-        let bounds = utils::bounds(self.year);
-        $(if bounds[$m] > self.day_of_year_0 {
-          $m
-        })else*
-        else { 12 }
-      }}
-    }
-    month!(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
+    self.ymd().1
   }
 
   /// Returns the day of the month, starting from 1.
@@ -239,55 +239,28 @@ impl Date {
   /// The return value ranges from 1 to 31. (The last day of the month differs by months.)
   #[inline]
   pub const fn day(&self) -> u8 {
-    macro_rules! day {
-      ($($m:literal),*) => {{
-        let bounds = utils::bounds(self.year);
-        ($(if bounds[$m] <= self.day_of_year_0 {
-          self.day_of_year_0 - bounds[$m] + 1
-        })else*
-        else { self.day_of_year_0 + 1 }) as u8
-      }}
-    }
-    day!(11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)
+    self.ymd().2
+  }
+
+  /// The day of the current year. Range: `[1, 366]`
+  #[inline]
+  pub const fn day_of_year(&self) -> u16 {
+    (self.0 - Date::new(self.year() - 1, 12, 31).0) as u16
   }
 
   /// Return the weekday corresponding to the given date.
   #[inline]
   pub const fn weekday(&self) -> Weekday {
-    // Implementation for this explained at [Art of Memory][aom].
-    //
-    // [aom]: https://artofmemory.com/blog/how-to-calculate-the-day-of-the-week/
-    let year_abs = self.year().unsigned_abs();
-    let year_code = (year_abs % 100 + (year_abs % 100 / 4)) % 7;
-
-    // Note: These values are offset by one from the referenced website because
-    // we are using 0-offset days of the year, rather than 1-offset days of the
-    // month plus month codes (as the website recommends).
-    //
-    // We follow this instead of the website's approach because (1) it better
-    // fits our data model and (2) it removes the need for month codes at all.
-    let century_code = match self.year() / 100 % 4 {
-      0 => 7,
-      1 => 5,
-      2 => 3,
-      3 => 1,
-      #[cfg(not(tarpaulin_include))]
-      _ => panic!("Unreachable: n % 4 is always within `0..=4`."),
-    };
-    let leap_year = match self.is_leap_year() {
-      true => 1,
-      false => 0,
-    };
-    match (year_code + century_code + self.day_of_year_0 - leap_year) % 7 {
+    match (self.0 + 4) % 7 {
       0 => Weekday::Sunday,
-      1 => Weekday::Monday,
-      2 => Weekday::Tuesday,
-      3 => Weekday::Wednesday,
-      4 => Weekday::Thursday,
-      5 => Weekday::Friday,
-      6 => Weekday::Saturday,
+      1 | -6 => Weekday::Monday,
+      2 | -5 => Weekday::Tuesday,
+      3 | -4 => Weekday::Wednesday,
+      4 | -3 => Weekday::Thursday,
+      5 | -2 => Weekday::Friday,
+      6 | -1 => Weekday::Saturday,
       #[cfg(not(tarpaulin_include))]
-      _ => panic!("Unreachable: Fake weekday"),
+      _ => panic!("Unreachable: Anything % 7 must be within -6 to 6"),
     }
   }
 }
@@ -305,32 +278,7 @@ impl Date {
   /// assert_eq!(date! { 2012-04-21 }.timestamp(), 1334966400);
   /// ```
   pub const fn timestamp(&self) -> i64 {
-    let mut day_count = 0;
-
-    // Add the days for all completed years.
-    //
-    // If the year is prior to 1970, also add (subtract, really) the days for the year under
-    // consideration; that way we have a consistent baseline and can always add the month/day
-    // values.
-    match self.year >= 1970 {
-      true => {
-        let mut cursor = 1970;
-        while cursor < self.year {
-          day_count += days_in_year(cursor) as i64;
-          cursor += 1;
-        }
-      },
-      false => {
-        let mut cursor = 1969;
-        while cursor >= self.year {
-          day_count -= days_in_year(cursor) as i64;
-          cursor -= 1;
-        }
-      },
-    }
-
-    // Add the month and day.
-    (day_count + self.day_of_year_0 as i64) * 86_400
+    self.0 as i64 * 86_400
   }
 }
 
@@ -482,6 +430,13 @@ mod tests {
   }
 
   #[test]
+  fn test_internal_repr() {
+    check!(date! { 1969-12-31 }.0 == -1);
+    check!(date! { 1970-01-01 }.0 == 0);
+    check!(date! { 1970-01-02 }.0 == 1);
+  }
+
+  #[test]
   fn test_ymd_readback() {
     for year in [2020, 2022, 2100] {
       for month in 1..=12 {
@@ -546,6 +501,7 @@ mod tests {
     overflows_to! { 2022-10-32 == 2022-11-01 };
     overflows_to! { 2022-11-31 == 2022-12-01 };
     overflows_to! { 2022-12-32 == 2023-01-01 };
+    overflows_to! { 2022-00-00 == 2021-11-30 };
     overflows_to! { 2022-01-00 == 2021-12-31 };
     overflows_to! { 2022-02-00 == 2022-01-31 };
     overflows_to! { 2022-03-00 == 2022-02-28 };
