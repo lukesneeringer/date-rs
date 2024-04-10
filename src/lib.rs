@@ -280,6 +280,14 @@ impl Date {
   pub const fn timestamp(&self) -> i64 {
     self.0 as i64 * 86_400
   }
+
+  /// The Unix timestamp for this date at midnight in the given time zone.
+  #[cfg(feature = "tzdb")]
+  pub fn timestamp_tz(&self, tz: &'static str) -> anyhow::Result<i64> {
+    let tz = tzdb::tz_by_name(tz).ok_or(anyhow::format_err!("Time zone not found: {}", tz))?;
+    let offset = tz.find_local_time_type(self.timestamp())?.ut_offset() as i64;
+    Ok(self.timestamp() - offset)
+  }
 }
 
 impl Date {
@@ -549,6 +557,7 @@ mod tests {
   fn test_timestamp_tz() -> anyhow::Result<()> {
     check!(Date::from_timestamp_tz(1335020400, "America/New_York")? == date! { 2012-04-21 });
     check!(Date::from_timestamp_tz(0, "America/Los_Angeles")? == date! { 1969-12-31 });
+    check!(date! { 2012-04-21 }.timestamp_tz("America/New_York")? == 1334980800);
     Ok(())
   }
 
