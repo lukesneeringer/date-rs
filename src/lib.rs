@@ -141,6 +141,9 @@ impl Date {
     Self(day_count)
   }
 
+  // FIXME: Make `tz` take a `TimeZoneRef<'static>` in 1.0
+  // ---
+
   /// The date on which the given timestamp occurred in the provided time zone.
   #[cfg(feature = "tzdb")]
   pub fn from_timestamp_tz(unix_timestamp: i64, tz: &'static str) -> anyhow::Result<Self> {
