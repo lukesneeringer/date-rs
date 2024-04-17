@@ -251,6 +251,16 @@ impl Date {
     (self.0 - Date::new(self.year() - 1, 12, 31).0) as u16
   }
 
+  /// The week number of the year (between 0 and 53, inclusive), with a new week starting each
+  /// Sunday.
+  ///
+  /// Week 1 begins on the first Sunday of the year; leading days before that are part of week 0.
+  pub const fn week(&self) -> u16 {
+    let jan1 = Date::new(self.year(), 1, 1);
+    let first_sunday = jan1.0 + if self.0 % 7 == 3 { 0 } else { 7 } - (self.0 + 4) % 7;
+    ((self.0 - first_sunday).div_euclid(7) + 1) as u16
+  }
+
   /// Return the weekday corresponding to the given date.
   #[inline]
   pub const fn weekday(&self) -> Weekday {
@@ -536,6 +546,18 @@ mod tests {
   fn test_display() {
     check!(date! { 2012-04-21 }.to_string() == "2012-04-21");
     check!(format!("{:?}", date! { 2012-04-21 }) == "2012-04-21");
+  }
+
+  #[test]
+  fn test_week() {
+    check!(date! { 2022-01-01 }.week() == 0); // Saturday
+    check!(date! { 2022-01-02 }.week() == 1); // Sunday
+    check!(date! { 2023-01-01 }.week() == 1); // Sunday
+    check!(date! { 2023-12-31 }.week() == 53); // Sunday
+    check!(date! { 2024-01-01 }.week() == 0); // Monday
+    check!(date! { 2024-01-07 }.week() == 1); // Sunday
+    check!(date! { 2024-01-08 }.week() == 1); // Monday
+    check!(date! { 2024-01-14 }.week() == 2); // Sunday
   }
 
   #[test]

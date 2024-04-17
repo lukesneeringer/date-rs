@@ -67,6 +67,7 @@ impl<'a> Display for FormattedDate<'a> {
           })?,
           // U, W
           'j' => write_padded!(f, padding, 3, d.day_of_year())?,
+          'U' => write_padded!(f, padding, 2, d.week())?,
           'D' => write!(f, "{:02}/{:02}/{:02}", ymd.1, ymd.2, ymd.0)?,
           'F' => write!(f, "{:04}-{:02}-{:02}", ymd.0, ymd.1, ymd.2)?,
           'v' => write!(f, "{:2}-{}-{:04}", d.day(), d.month_abbv(), d.year())?,
@@ -163,6 +164,7 @@ mod tests {
       ("%%", "%"),
       ("%w %u", "6 6"),
       ("%t %n", "\t \n"),
+      ("%Y week %U", "2012 week 16"),
     ] {
       check!(date.format(fmt_string).to_string() == date_str);
       check!(date.format(fmt_string) == date_str);
