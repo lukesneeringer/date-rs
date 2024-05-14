@@ -18,7 +18,7 @@ use crate::Date;
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(transparent)]
 pub struct DateInterval {
-  pub days: i32, // FIXME: Make private in 1.0.
+  days: i32,
 }
 
 impl DateInterval {
@@ -101,7 +101,7 @@ impl Sub<Date> for Date {
 ///
 /// ```
 /// use date::date;
-/// use date::MonthInterval;
+/// use date::interval::MonthInterval;
 ///
 /// assert_eq!(date! { 2012-04-21 } + MonthInterval::new(3), date! { 2012-07-21 });
 /// assert_eq!(date! { 2021-12-31 } + MonthInterval::new(2), date! { 2022-02-28 });

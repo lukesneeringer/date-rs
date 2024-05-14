@@ -10,8 +10,8 @@ use diesel::serialize::Result as SerializeResult;
 use diesel::serialize::ToSql;
 use diesel::sql_types;
 
+use crate::interval::DateInterval;
 use crate::Date;
-use crate::DateInterval;
 
 impl ToSql<sql_types::Date, Pg> for Date {
   fn to_sql<'se>(&'se self, out: &mut Output<'se, '_, Pg>) -> SerializeResult {

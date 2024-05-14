@@ -31,6 +31,30 @@ use strptime::ParseError;
 use strptime::ParseResult;
 use strptime::Parser;
 
+/// Time zone compnents (re-exported from `tzdb` crate).
+#[cfg(feature = "tz")]
+pub mod tz {
+  pub use tz::TimeZoneRef;
+  pub use tzdb::tz_by_name;
+
+  /// The result type for evaluating a specific timestamp against a time zone.
+  ///
+  /// Errors occur primarily when the timestamp in question is for a time when the time zone did
+  /// not exist.
+  pub type TzResult<T> = Result<T, ::tz::error::FindLocalTimeTypeError>;
+
+  pub use tzdb::time_zone::africa;
+  pub use tzdb::time_zone::america;
+  pub use tzdb::time_zone::antarctica;
+  pub use tzdb::time_zone::arctic;
+  pub use tzdb::time_zone::asia;
+  pub use tzdb::time_zone::atlantic;
+  pub use tzdb::time_zone::australia;
+  pub use tzdb::time_zone::europe;
+  pub use tzdb::time_zone::indian;
+  pub use tzdb::time_zone::us;
+}
+
 /// Construct a date from a `YYYY-MM-DD` literal.
 ///
 /// ## Examples
@@ -55,15 +79,13 @@ macro_rules! date {
 #[cfg(feature = "diesel-pg")]
 mod db;
 mod format;
-pub(crate) mod interval; // FIXME: Change to `pub` in 1.0.
+pub mod interval;
 pub mod iter;
 #[cfg(feature = "serde")]
 mod serde;
 mod utils;
 mod weekday;
 
-pub use interval::DateInterval; // FIXME: Remove in 1.0.
-pub use interval::MonthInterval; // FIXME: Remove in 1.0.
 pub use weekday::Weekday;
 
 /// A representation of a single date.
@@ -141,15 +163,15 @@ impl Date {
     Self(day_count)
   }
 
-  // FIXME: Make `tz` take a `TimeZoneRef<'static>` in 1.0
-  // ---
-
   /// The date on which the given timestamp occurred in the provided time zone.
-  #[cfg(feature = "tzdb")]
-  pub fn from_timestamp_tz(unix_timestamp: i64, tz: &'static str) -> anyhow::Result<Self> {
-    let tz = tzdb::tz_by_name(tz).ok_or(anyhow::format_err!("Time zone not found: {}", tz))?;
-    let offset = tz.find_local_time_type(unix_timestamp)?.ut_offset() as i64;
-    Ok(Self::from_timestamp(unix_timestamp + offset))
+  #[cfg(feature = "tz")]
+  pub const fn from_timestamp_tz(
+    unix_timestamp: i64, tz: tz::TimeZoneRef<'static>,
+  ) -> tz::TzResult<Self> {
+    match tz.find_local_time_type(unix_timestamp) {
+      Ok(tz) => Ok(Self::from_timestamp(unix_timestamp + tz.ut_offset() as i64)),
+      Err(e) => Err(e),
+    }
   }
 
   /// Construct a new `Date` from the provided year, month, and day.
@@ -295,11 +317,12 @@ impl Date {
   }
 
   /// The Unix timestamp for this date at midnight in the given time zone.
-  #[cfg(feature = "tzdb")]
-  pub fn timestamp_tz(&self, tz: &'static str) -> anyhow::Result<i64> {
-    let tz = tzdb::tz_by_name(tz).ok_or(anyhow::format_err!("Time zone not found: {}", tz))?;
-    let offset = tz.find_local_time_type(self.timestamp())?.ut_offset() as i64;
-    Ok(self.timestamp() - offset)
+  #[cfg(feature = "tz")]
+  pub const fn timestamp_tz(&self, tz: tz::TimeZoneRef<'static>) -> tz::TzResult<i64> {
+    match tz.find_local_time_type(self.timestamp()) {
+      Ok(ts) => Ok(self.timestamp() - ts.ut_offset() as i64),
+      Err(e) => Err(e),
+    }
   }
 }
 
@@ -310,7 +333,7 @@ impl Date {
   ///
   /// This function will panic if the system clock is set to a time prior to January 1, 1970, or if
   /// the local time zone can not be determined.
-  #[cfg(feature = "tzdb")]
+  #[cfg(feature = "tz")]
   pub fn today() -> Self {
     let tz = tzdb::local_tz().expect("Could not determine local time zone");
     let now =
@@ -323,10 +346,10 @@ impl Date {
   }
 
   /// The date representing today, in the provided time zone.
-  #[cfg(feature = "tzdb")]
-  pub fn today_tz(tz: &'static str) -> anyhow::Result<Self> {
-    let tz = tzdb::tz_by_name(tz).ok_or(anyhow::format_err!("Time zone not found: {}", tz))?;
-    let now = now().duration_since(UNIX_EPOCH)?.as_secs() as i64;
+  #[cfg(feature = "tz")]
+  pub fn today_tz(tz: tz::TimeZoneRef<'static>) -> tz::TzResult<Self> {
+    let now =
+      now().duration_since(UNIX_EPOCH).expect("system time set prior to 1970").as_secs() as i64;
     let offset = tz.find_local_time_type(now)?.ut_offset() as i64;
     Ok(Self::from_timestamp(now + offset))
   }
@@ -567,22 +590,22 @@ mod tests {
     clear_now();
   }
 
-  #[cfg(feature = "tzdb")]
+  #[cfg(feature = "tz")]
   #[test]
-  fn test_today_tz() -> anyhow::Result<()> {
+  fn test_today_tz() -> tz::TzResult<()> {
     set_now(SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(86_400));
     check!([date! { 1970-01-01 }, date! { 1970-01-02 }].contains(&Date::today()));
-    check!(Date::today_tz("America/New_York")? == date! { 1970-01-01 });
+    check!(Date::today_tz(tz::us::EASTERN)? == date! { 1970-01-01 });
     clear_now();
     Ok(())
   }
 
-  #[cfg(feature = "tzdb")]
+  #[cfg(feature = "tz")]
   #[test]
-  fn test_timestamp_tz() -> anyhow::Result<()> {
-    check!(Date::from_timestamp_tz(1335020400, "America/New_York")? == date! { 2012-04-21 });
-    check!(Date::from_timestamp_tz(0, "America/Los_Angeles")? == date! { 1969-12-31 });
-    check!(date! { 2012-04-21 }.timestamp_tz("America/New_York")? == 1334980800);
+  fn test_timestamp_tz() -> tz::TzResult<()> {
+    check!(Date::from_timestamp_tz(1335020400, tz::us::EASTERN)? == date! { 2012-04-21 });
+    check!(Date::from_timestamp_tz(0, tz::us::PACIFIC)? == date! { 1969-12-31 });
+    check!(date! { 2012-04-21 }.timestamp_tz(tz::us::EASTERN)? == 1334980800);
     Ok(())
   }
 
