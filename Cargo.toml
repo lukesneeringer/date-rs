@@ -1,6 +1,6 @@
 [package]
 name = "date-rs"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2021"
 authors = ["Luke Sneeringer <luke@sneeringer.com>"]
 description = "Gregorian calendar date"
@@ -23,7 +23,7 @@ name = "date"
 [dependencies]
 diesel = { version = "2", optional = true }
 serde = { version = "1", optional = true }
-strptime = { version = "0.2" }
+strptime = { version = "1" }
 tzdb = { version = "0.6", optional = true, features = ["local"] }
 tz-rs = { version = "0.6", optional = true }
 
