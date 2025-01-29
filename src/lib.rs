@@ -139,8 +139,8 @@ impl Date {
   /// ## Examples
   ///
   /// ```
-  /// use date::date;
   /// use date::Date;
+  /// use date::date;
   ///
   /// let day_one = Date::from_timestamp(0);
   /// assert_eq!(day_one, date! { 1970-01-01 });
@@ -372,7 +372,7 @@ impl Date {
   #[doc = include_str!("../support/padding.md")]
   ///
   #[doc = include_str!("../support/plain-characters.md")]
-  pub fn format<'a>(&'a self, format_str: &'a str) -> format::FormattedDate {
+  pub fn format<'a>(&'a self, format_str: &'a str) -> format::FormattedDate<'a> {
     format::FormattedDate { date: self, format: format_str }
   }
 }
