@@ -1,10 +1,10 @@
 use std::fmt;
 
-use serde::de::Visitor;
 use serde::Deserialize;
 use serde::Deserializer;
 use serde::Serialize;
 use serde::Serializer;
+use serde::de::Visitor;
 
 use crate::Date;
 
@@ -16,7 +16,7 @@ impl Serialize for Date {
 
 struct DateVisitor;
 
-impl<'de> Visitor<'de> for DateVisitor {
+impl Visitor<'_> for DateVisitor {
   type Value = Date;
 
   #[cfg(not(tarpaulin_include))]

@@ -8,8 +8,8 @@ use std::ops::Neg;
 use std::ops::Sub;
 use std::ops::SubAssign;
 
-use crate::utils;
 use crate::Date;
+use crate::utils;
 
 /// An interval of days.
 ///

@@ -37,3 +37,6 @@ default = ["serde"]
 diesel-pg = ["dep:diesel", "diesel/postgres"]
 easter = []
 tz = ["dep:tz-rs", "dep:tzdb"]
+
+[lints.rust]
+unexpected_cfgs = { level = "allow", check-cfg = ['cfg(tarpaulin_include)'] }
