@@ -41,7 +41,7 @@ pub mod tz {
   ///
   /// Errors occur primarily when the timestamp in question is for a time when the time zone did
   /// not exist.
-  pub type TzResult<T> = Result<T, ::tz::error::FindLocalTimeTypeError>;
+  pub type TzResult<T> = Result<T, ::tz::error::TzError>;
 
   pub use tzdb::time_zone::africa;
   pub use tzdb::time_zone::america;
@@ -139,8 +139,8 @@ impl Date {
   /// ## Examples
   ///
   /// ```
-  /// use date::date;
   /// use date::Date;
+  /// use date::date;
   ///
   /// let day_one = Date::from_timestamp(0);
   /// assert_eq!(day_one, date! { 1970-01-01 });
