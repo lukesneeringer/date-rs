@@ -13,13 +13,13 @@ pub struct FormattedDate<'a> {
   pub(crate) format: &'a str,
 }
 
-impl<'a> Debug for FormattedDate<'a> {
+impl Debug for FormattedDate<'_> {
   fn fmt(&self, f: &mut Formatter<'_>) -> Result {
     Display::fmt(self, f)
   }
 }
 
-impl<'a> Display for FormattedDate<'a> {
+impl Display for FormattedDate<'_> {
   fn fmt(&self, f: &mut Formatter<'_>) -> Result {
     // Iterate over the format string and consume it.
     let d = self.date;
@@ -87,7 +87,7 @@ impl<'a> Display for FormattedDate<'a> {
   }
 }
 
-impl<'a> PartialEq<&str> for FormattedDate<'a> {
+impl PartialEq<&str> for FormattedDate<'_> {
   fn eq(&self, other: &&str) -> bool {
     &self.to_string().as_str() == other
   }
