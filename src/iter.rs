@@ -2,8 +2,8 @@
 
 use std::iter::Iterator;
 
-use crate::interval::DateInterval;
 use crate::Date;
+use crate::interval::DateInterval;
 
 /// An iterator that will yield dates indefinitely.
 pub struct DateIterator {
