@@ -71,7 +71,7 @@ macro_rules! date {
   ($y:literal-$m:literal-$d:literal) => {{
     #[allow(clippy::zero_prefixed_literal)]
     {
-      $crate::Date::new($y, $m, $d)
+      const { $crate::Date::new($y, $m, $d) }
     }
   }};
 }
