@@ -39,6 +39,7 @@ mathematical computations without having to do their own overflow checking.
 `date-rs` ships with the following features:
 
 - **`diesel-pg`**: Enables interop with PostgreSQL `DATE` columns using Diesel.
-- **`easter`**: Enables calculation for the date of Easter.
+- **`easter`**: Enables calculation for the date of Easter (Gregorian calenda).
+- **`log`**: Adds `log::kv::ToValue` implementation.
 - **`serde`**: Enables serialization and desearialization with `serde`. _(Enabled by default.)_
 - **`tz`**: Enables support for time-zone-aware date construction.
