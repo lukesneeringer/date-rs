@@ -1,12 +1,12 @@
 [package]
 name = "date-rs"
 version = "1.2.0"
-edition = "2021"
+edition = "2024"
 authors = ["Luke Sneeringer <luke@sneeringer.com>"]
 description = "Gregorian calendar date"
 keywords = ["date", "time"]
 categories = ["date-and-time"]
-rust-version = "1.73"
+rust-version = "1.85"
 license = "MIT"
 repository = "https://github.com/lukesneeringer/date-rs"
 documentation = "https://docs.rs/date_rs"
