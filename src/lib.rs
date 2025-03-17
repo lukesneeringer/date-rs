@@ -427,6 +427,13 @@ impl fmt::Display for Date {
   }
 }
 
+#[cfg(feature = "log")]
+impl log::kv::ToValue for Date {
+  fn to_value(&self) -> log::kv::Value<'_> {
+    log::kv::Value::from_debug(self)
+  }
+}
+
 impl FromStr for Date {
   type Err = ParseError;
 
