@@ -9,7 +9,7 @@ use crate::Date;
 
 /// A date with a requested format.
 pub struct FormattedDate<'a> {
-  pub(crate) date: &'a Date,
+  pub(crate) date: Date,
   pub(crate) format: &'a str,
 }
 
