@@ -1,6 +1,6 @@
 [package]
 name = "date-rs"
-version = "1.2.0"
+version = "1.2.1"
 edition = "2024"
 authors = ["Luke Sneeringer <luke@sneeringer.com>"]
 description = "Gregorian calendar date"
@@ -11,11 +11,7 @@ license = "MIT"
 repository = "https://github.com/lukesneeringer/date-rs"
 documentation = "https://docs.rs/date_rs"
 readme = "README.md"
-exclude = [
-  "/.github/*",
-  "/rustfmt.toml",
-  "/.prettierrc.yaml",
-]
+exclude = ["/.github/*", "/rustfmt.toml", "/.prettierrc.yaml"]
 
 [lib]
 name = "date"

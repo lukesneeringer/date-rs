@@ -372,7 +372,7 @@ impl Date {
   #[doc = include_str!("../support/padding.md")]
   ///
   #[doc = include_str!("../support/plain-characters.md")]
-  pub fn format<'a>(&'a self, format_str: &'a str) -> format::FormattedDate<'a> {
+  pub const fn format(self, format_str: &str) -> self::format::FormattedDate<'_> {
     format::FormattedDate { date: self, format: format_str }
   }
 }
