@@ -36,7 +36,7 @@ mod tests {
     let dt = date! { 2012-04-21 };
     let output = dt.to_sql()?;
     if let ToSqlOutput::Borrowed(ValueRef::Date32(i)) = output {
-      check!(i == 20_000);
+      check!(i == 15_451);
     } else {
       check!(false, "Incorrect type");
     }
