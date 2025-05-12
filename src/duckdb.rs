@@ -30,6 +30,15 @@ mod tests {
   use assert2::check;
 
   use super::*;
+  use crate::date;
+
+  #[test]
+  fn test_from_sql() -> FromSqlResult<()> {
+    let input = ValueRef::Date32(15_451);
+    let date = Date::column_result(input)?;
+    check!(date == date! { 2012-04-21 });
+    Ok(())
+  }
 
   #[test]
   fn test_to_sql() -> Result<()> {
