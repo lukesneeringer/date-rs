@@ -77,7 +77,9 @@ macro_rules! date {
 }
 
 #[cfg(feature = "diesel-pg")]
-mod db;
+mod diesel_pg;
+#[cfg(feature = "duckdb")]
+mod duckdb;
 mod format;
 pub mod interval;
 pub mod iter;
