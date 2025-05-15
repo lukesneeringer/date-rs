@@ -91,7 +91,7 @@ mod weekday;
 pub use weekday::Weekday;
 
 /// A representation of a single date.
-#[derive(Copy, Clone, Eq, PartialEq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Eq, Hash, PartialEq, PartialOrd, Ord)]
 #[cfg_attr(feature = "diesel-pg", derive(diesel::AsExpression, diesel::FromSqlRow))]
 #[cfg_attr(feature = "diesel-pg", diesel(sql_type = ::diesel::sql_types::Date))]
 #[repr(transparent)]
