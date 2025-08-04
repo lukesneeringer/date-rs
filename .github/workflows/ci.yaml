@@ -20,7 +20,7 @@ jobs:
       - run: cargo test --verbose --all-features --workspace
         env:
           DUCKDB_STATIC: 1
-          LDFLAGS: -L/tmp/libduckdb
+          DUCKDB_LIB_DIR: /tmp/libduckdb
           CARGO_NET_GIT_FETCH_WITH_CLI: true
   lint:
     runs-on: ubuntu-latest
