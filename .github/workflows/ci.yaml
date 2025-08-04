@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install DuckDB.
         run: |
-          curl https://github.com/duckdb/duckdb/releases/download/v1.3.2/libduckdb-linux-amd64.zip > libduckdb.zip \
+          curl -L https://github.com/duckdb/duckdb/releases/download/v1.3.2/libduckdb-linux-amd64.zip > libduckdb.zip \
               && unzip libduckdb.zip -d libduckdb \
               && sudo mv libduckdb/duckdb.* /usr/local/include \
               && sudo mv libduckdb/libduckdb.so /usr/local/lib \
