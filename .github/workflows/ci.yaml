@@ -6,14 +6,13 @@ on:
       - main
 jobs:
   unit-tests:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: brew install duckdb
+      - uses: opt-nc/setup-duckdb-action@v1.0.14
       - run: cargo test --all-features --workspace
         env:
           CARGO_NET_GIT_FETCH_WITH_CLI: true
-          LDFLAGS: -L/opt/homebrew/opt/duckdb/lib
   lint:
     runs-on: ubuntu-latest
     container:
