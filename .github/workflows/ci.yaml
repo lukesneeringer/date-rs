@@ -17,7 +17,7 @@ jobs:
               && sudo mv libduckdb/libduckdb.so /usr/local/lib \
               && ldconfig -n -v /usr/local/lib
         working-directory: /tmp
-      - run: cargo test --all-features --workspace
+      - run: cargo test --verbose --all-features --workspace
         env:
           DUCKDB_STATIC: 1
           LDFLAGS: -L/tmp/libduckdb
