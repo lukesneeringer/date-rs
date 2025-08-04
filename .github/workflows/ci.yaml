@@ -6,18 +6,20 @@ on:
       - main
 jobs:
   unit-tests:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+      - run: brew install duckdb
       - run: cargo test --all-features --workspace
         env:
           CARGO_NET_GIT_FETCH_WITH_CLI: true
   lint:
     runs-on: ubuntu-latest
+    container:
+      image: rustlang/rust:nightly-slim
     steps:
       - uses: actions/checkout@v4
-      - run: rustup toolchain install nightly
-      - run: rustup component add rustfmt --toolchain nightly
+      - run: rustup +nightly component add rustfmt
       - run: cargo +nightly fmt -- --check
         env:
           CARGO_NET_GIT_FETCH_WITH_CLI: true
@@ -25,6 +27,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: cargo doc --no-deps --bins
+      - run: cargo doc --no-deps
         env:
           CARGO_NET_GIT_FETCH_WITH_CLI: true
