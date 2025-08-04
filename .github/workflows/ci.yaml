@@ -13,6 +13,7 @@ jobs:
       - run: cargo test --all-features --workspace
         env:
           CARGO_NET_GIT_FETCH_WITH_CLI: true
+          LDFLAGS: -L/opt/homebrew/opt/duckdb/lib
   lint:
     runs-on: ubuntu-latest
     container:
