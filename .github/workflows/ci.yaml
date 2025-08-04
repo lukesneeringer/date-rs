@@ -15,7 +15,8 @@ jobs:
               && unzip libduckdb-linux-amd64.zip -d libduckdb \
               && mv libduckdb/duckdb.* /usr/local/include \
               && mv libduckdb/libduckdb.so /usr/local/lib \
-              && rm -rf libduckd *.zip
+              && rm -rf libduckd *.zip \
+              && ldconfig -n -v /usr/local/lib
         working-directory: /tmp
       - run: cargo test --all-features --workspace
         env:
