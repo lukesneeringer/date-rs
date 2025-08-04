@@ -11,13 +11,13 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install DuckDB.
         run: |
-          curl -L https://github.com/duckdb/duckdb/releases/download/v1.3.2/libduckdb-linux-amd64.zip > libduckdb.zip \
-              && unzip libduckdb.zip -d libduckdb \
-              && sudo mv libduckdb/duckdb.* /usr/local/include \
-              && sudo mv libduckdb/libduckdb.so /usr/local/lib \
-              && ldconfig -n -v /usr/local/lib \
-              && mv /tmp/libduckdb/libduckdb_static.a /tmp/libduckdb/libduckdb.a
-              && ls -al /tmp/libduckdb
+          curl -L https://github.com/duckdb/duckdb/releases/download/v1.3.2/libduckdb-linux-amd64.zip > libduckdb.zip && \
+              unzip libduckdb.zip -d libduckdb && \
+              sudo mv libduckdb/duckdb.* /usr/local/include && \
+              sudo mv libduckdb/libduckdb.so /usr/local/lib && \
+              ldconfig -n -v /usr/local/lib && \
+              mv /tmp/libduckdb/libduckdb_static.a /tmp/libduckdb/libduckdb.a && \
+              ls -al /tmp/libduckdb
         working-directory: /tmp
       - run: cargo test --verbose --all-features --workspace
         env:
