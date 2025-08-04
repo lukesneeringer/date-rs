@@ -21,7 +21,7 @@ jobs:
         env:
           CARGO_NET_GIT_FETCH_WITH_CLI: true
           DUCKDB_INCLUDE_DIR: /opt/duckdb
-          LDFLAGS: /opt/duckdb:${{ env.LDFLAGS }}
+          LD_LIBRARY_PATH: /opt/duckdb:${{ env.LD_LIBRARY_PATH }}
   lint:
     runs-on: ubuntu-latest
     container:
