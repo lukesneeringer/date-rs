@@ -12,11 +12,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install DuckDB library
+      - name: Install DuckDB.
+        working-directory: /tmp
         env:
           DUCKDB_VERSION: "1.3.2"
         run: |
-            set -euo pipefail
             LIBDIR="$HOME/.libduckdb"
             mkdir -p "$LIBDIR"
 
@@ -26,11 +26,12 @@ jobs:
 
             unzip -q duckdb.zip -d "$LIBDIR"
 
-            echo "DUCKDB_LIB_DIR=$LIBDIR"                >> "$GITHUB_ENV"
-            echo "DUCKDB_INCLUDE_DIR=$LIBDIR"            >> "$GITHUB_ENV"
+            echo "DUCKDB_LIB_DIR=$LIBDIR"                       >> "$GITHUB_ENV"
+            echo "DUCKDB_INCLUDE_DIR=$LIBDIR"                   >> "$GITHUB_ENV"
             echo "LD_LIBRARY_PATH=$LIBDIR:${LD_LIBRARY_PATH:-}" >> "$GITHUB_ENV"
 
-      - run: echo "$DUCKDB_LIB_DIR"; echo "$DUCKDB_INCLUDE_DIR"; ls "$DUCKDB_LIB_DIR"
+      # Uncomment to debug libduckdb linking issues
+      # - run: echo "$DUCKDB_LIB_DIR"; echo "$DUCKDB_INCLUDE_DIR"; ls "$DUCKDB_LIB_DIR"
 
       - run: cargo test --verbose --all-features --workspace
         env:
