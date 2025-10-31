@@ -1,6 +1,6 @@
 [package]
 name = "date-rs"
-version = "1.4.0"
+version = "1.5.0"
 edition = "2024"
 authors = ["Luke Sneeringer <luke@sneeringer.com>"]
 description = "Gregorian calendar date"
@@ -35,6 +35,7 @@ default = ["serde"]
 diesel-pg = ["dep:diesel", "diesel/postgres"]
 duckdb = ["dep:duckdb"]
 easter = []
+ord = []
 tz = ["dep:tz-rs", "dep:tzdb"]
 
 [lints.rust]

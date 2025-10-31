@@ -165,6 +165,22 @@ impl Date {
     Self(day_count)
   }
 
+  /// Construct a new `Date` based on the number of days since January 1, 1970.
+  ///
+  /// ## Example
+  ///
+  /// ```
+  /// # use date::Date;
+  /// let date = Date::from_ord(5);
+  /// assert_eq!(date.year(), 1970);
+  /// assert_eq!(date.month(), 1);
+  /// assert_eq!(date.day(), 6);
+  /// ```
+  #[cfg(feature = "ord")]
+  pub const fn from_ord(ord: i32) -> Self {
+    Self(ord)
+  }
+
   /// The date on which the given timestamp occurred in the provided time zone.
   #[cfg(feature = "tz")]
   pub const fn from_timestamp_tz(
@@ -245,6 +261,13 @@ impl Date {
     let day = day_of_year - (153 * mp + 2) / 5 + 1;
     let month = if mp < 10 { mp + 3 } else { mp - 9 };
     (year as i16 + if month <= 2 { 1 } else { 0 }, month as u8, day as u8)
+  }
+
+  /// Return the number of days since January 1, 1970.
+  #[inline]
+  #[cfg(feature = "ord")]
+  pub const fn ord(&self) -> i32 {
+    self.0
   }
 
   /// Returns the year number in the calendar date.
@@ -661,5 +684,12 @@ mod tests {
     check!(Date::parse("04/21/12", "%m/%d/%y")? == date! { 2012-04-21 });
     check!(Date::parse("Saturday, April 21, 2012", "%A, %B %-d, %Y")? == date! { 2012-04-21 });
     Ok(())
+  }
+
+  #[test]
+  #[cfg(feature = "ord")]
+  fn test_ord() {
+    let date = date! { 1970-01-06 };
+    check!(date.ord() == 5);
   }
 }
