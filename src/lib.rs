@@ -22,6 +22,7 @@
 //! let date = date! { 2012-04-21 };
 //! ```
 
+use std::cmp::Ordering;
 use std::fmt;
 use std::str::FromStr;
 use std::time::SystemTime;
@@ -473,6 +474,18 @@ impl From<strptime::RawDate> for Date {
   }
 }
 
+impl PartialEq<Date> for &Date {
+  fn eq(&self, other: &Date) -> bool {
+    *self == other
+  }
+}
+
+impl PartialOrd<Date> for &Date {
+  fn partial_cmp(&self, other: &Date) -> Option<Ordering> {
+    (*self).partial_cmp(other)
+  }
+}
+
 #[cfg(not(test))]
 fn now() -> SystemTime {
   SystemTime::now()
@@ -691,5 +704,12 @@ mod tests {
   fn test_ord() {
     let date = date! { 1970-01-06 };
     check!(date.ord() == 5);
+  }
+
+  #[test]
+  fn test_ref_eq() {
+    let date = date! { 2012-04-21 };
+    check!(&date == date);
+    check!(&date > date! { 2012-04-20 });
   }
 }
