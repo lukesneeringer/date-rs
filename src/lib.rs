@@ -422,7 +422,7 @@ impl Date {
 impl Date {
   /// The date of Easter in the Gregorian calendar for the given year.
   pub const fn easter(year: i16) -> Self {
-    assert!(year >= 1583 || year <= 9999, "Year out of bounds");
+    assert!(year >= 1583 && year <= 9999, "Year out of bounds");
     let a = year % 19;
     let b = year / 100;
     let c = year % 100;
