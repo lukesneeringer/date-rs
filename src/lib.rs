@@ -464,6 +464,22 @@ impl FromStr for Date {
   type Err = ParseError;
 
   fn from_str(s: &str) -> ParseResult<Self> {
+    let b = s.as_bytes();
+    if b.len() == 10
+      && b[4] == b'-'
+      && b[7] == b'-'
+      && b.iter().enumerate().all(|(i, c)| matches!(i, 4 | 7) || c.is_ascii_digit())
+    {
+      let year = (b[0] - b'0') as i16 * 1000
+        + (b[1] - b'0') as i16 * 100
+        + (b[2] - b'0') as i16 * 10
+        + (b[3] - b'0') as i16;
+      let month = (b[5] - b'0') * 10 + (b[6] - b'0');
+      let day = (b[8] - b'0') * 10 + (b[9] - b'0');
+      if (1..=12).contains(&month) && day >= 1 && day <= utils::days_in_month(year, month) {
+        return Ok(Self::new(year, month, day));
+      }
+    }
     Self::parse(s, "%Y-%m-%d")
   }
 }
